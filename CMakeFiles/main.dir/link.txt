@@ -1,0 +1,1 @@
+/usr/bin/cc  -std=c11   CMakeFiles/main.dir/src/main.c.o CMakeFiles/main.dir/src/mcp3008.c.o  -o main -rdynamic -lwiringPi -lpthread 
