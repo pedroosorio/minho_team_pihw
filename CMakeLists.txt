@@ -11,6 +11,7 @@ set(SDIR ${PDIR}/src)
 
 set(MLIB_DIR ${PDIR}/libs)
 link_directories(${MLIB_DIR})
+
 ## Compile mcp3008 as a shared library
 add_library(mcp3k8 SHARED ${SDIR}/mcp3008.c)
 set_target_properties( mcp3k8
@@ -18,6 +19,19 @@ set_target_properties( mcp3k8
     LIBRARY_OUTPUT_DIRECTORY ${MLIB_DIR}
 )
 ##
+
+## Compile Omni3MD as a shared library
+add_library(Omni3MD SHARED ${SDIR}/Omni3MD.cpp)
+set_target_properties( Omni3MD
+    PROPERTIES
+    LIBRARY_OUTPUT_DIRECTORY ${MLIB_DIR}
+)
+target_compile_features(Omni3MD PRIVATE cxx_range_for)
+##
+
+
+
+
 
 ## Compile program
 set(SRC ${SDIR}/main.c)

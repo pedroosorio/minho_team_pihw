@@ -1,0 +1,1 @@
+/usr/bin/c++  -fPIC   -shared -Wl,-soname,libOmni3MD.so -o libs/libOmni3MD.so CMakeFiles/Omni3MD.dir/src/Omni3MD.cpp.o  -L/home/pi/dev/minho_team_pihw/libs 

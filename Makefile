@@ -124,6 +124,19 @@ main/fast:
 .PHONY : main/fast
 
 #=============================================================================
+# Target rules for targets named Omni3MD
+
+# Build rule for target.
+Omni3MD: cmake_check_build_system
+	$(MAKE) -f CMakeFiles/Makefile2 Omni3MD
+.PHONY : Omni3MD
+
+# fast build rule for target.
+Omni3MD/fast:
+	$(MAKE) -f CMakeFiles/Omni3MD.dir/build.make CMakeFiles/Omni3MD.dir/build
+.PHONY : Omni3MD/fast
+
+#=============================================================================
 # Target rules for targets named mcp3k8
 
 # Build rule for target.
@@ -135,6 +148,33 @@ mcp3k8: cmake_check_build_system
 mcp3k8/fast:
 	$(MAKE) -f CMakeFiles/mcp3k8.dir/build.make CMakeFiles/mcp3k8.dir/build
 .PHONY : mcp3k8/fast
+
+src/Omni3MD.o: src/Omni3MD.cpp.o
+
+.PHONY : src/Omni3MD.o
+
+# target to build an object file
+src/Omni3MD.cpp.o:
+	$(MAKE) -f CMakeFiles/Omni3MD.dir/build.make CMakeFiles/Omni3MD.dir/src/Omni3MD.cpp.o
+.PHONY : src/Omni3MD.cpp.o
+
+src/Omni3MD.i: src/Omni3MD.cpp.i
+
+.PHONY : src/Omni3MD.i
+
+# target to preprocess a source file
+src/Omni3MD.cpp.i:
+	$(MAKE) -f CMakeFiles/Omni3MD.dir/build.make CMakeFiles/Omni3MD.dir/src/Omni3MD.cpp.i
+.PHONY : src/Omni3MD.cpp.i
+
+src/Omni3MD.s: src/Omni3MD.cpp.s
+
+.PHONY : src/Omni3MD.s
+
+# target to generate assembly for a file
+src/Omni3MD.cpp.s:
+	$(MAKE) -f CMakeFiles/Omni3MD.dir/build.make CMakeFiles/Omni3MD.dir/src/Omni3MD.cpp.s
+.PHONY : src/Omni3MD.cpp.s
 
 src/main.o: src/main.c.o
 
@@ -199,7 +239,11 @@ help:
 	@echo "... edit_cache"
 	@echo "... rebuild_cache"
 	@echo "... main"
+	@echo "... Omni3MD"
 	@echo "... mcp3k8"
+	@echo "... src/Omni3MD.o"
+	@echo "... src/Omni3MD.i"
+	@echo "... src/Omni3MD.s"
 	@echo "... src/main.o"
 	@echo "... src/main.i"
 	@echo "... src/main.s"
