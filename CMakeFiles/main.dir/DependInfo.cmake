@@ -4,8 +4,7 @@ set(CMAKE_DEPENDS_LANGUAGES
   )
 # The set of files for implicit dependencies of each language:
 set(CMAKE_DEPENDS_CHECK_C
-  "/home/pi/dev/test/src/main.c" "/home/pi/dev/test/CMakeFiles/main.dir/src/main.c.o"
-  "/home/pi/dev/test/src/mcp3008.c" "/home/pi/dev/test/CMakeFiles/main.dir/src/mcp3008.c.o"
+  "/home/pi/dev/minho_team_pihw/src/main.c" "/home/pi/dev/minho_team_pihw/CMakeFiles/main.dir/src/main.c.o"
   )
 set(CMAKE_C_COMPILER_ID "GNU")
 
@@ -16,6 +15,7 @@ set(CMAKE_C_TARGET_INCLUDE_PATH
 
 # Targets to which this target links.
 set(CMAKE_TARGET_LINKED_INFO_FILES
+  "/home/pi/dev/minho_team_pihw/CMakeFiles/mcp3k8.dir/DependInfo.cmake"
   )
 
 # Fortran module output directory.

@@ -6,11 +6,9 @@
 
 #IncludeRegexTransform: 
 
-/home/pi/dev/minho_team_pihw/src/main.c
+/home/pi/dev/minho_team_pihw/src/mcp3008.c
 mcp3008.h
 /home/pi/dev/minho_team_pihw/src/mcp3008.h
-sys/time.h
--
 
 include/mcp3008.h
 unistd.h

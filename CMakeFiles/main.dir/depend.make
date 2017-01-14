@@ -4,6 +4,3 @@
 CMakeFiles/main.dir/src/main.c.o: src/main.c
 CMakeFiles/main.dir/src/main.c.o: include/mcp3008.h
 
-CMakeFiles/main.dir/src/mcp3008.c.o: src/mcp3008.c
-CMakeFiles/main.dir/src/mcp3008.c.o: include/mcp3008.h
-

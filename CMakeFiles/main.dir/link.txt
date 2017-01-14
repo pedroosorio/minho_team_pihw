@@ -1,1 +1,1 @@
-/usr/bin/cc  -std=c11   CMakeFiles/main.dir/src/main.c.o CMakeFiles/main.dir/src/mcp3008.c.o  -o main -rdynamic -lwiringPi -lpthread 
+/usr/bin/cc   -std=c11   CMakeFiles/main.dir/src/main.c.o  -o main  -L/home/pi/dev/minho_team_pihw/libs -rdynamic -lwiringPi -lpthread libs/libmcp3k8.so -Wl,-rpath,/home/pi/dev/minho_team_pihw/libs 

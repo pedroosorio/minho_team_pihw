@@ -4,7 +4,7 @@ set(CMAKE_DEPENDS_LANGUAGES
   )
 # The set of files for implicit dependencies of each language:
 set(CMAKE_DEPENDS_CHECK_C
-  "/home/pi/dev/test/src/test.c" "/home/pi/dev/test/CMakeFiles/test.dir/src/test.c.o"
+  "/home/pi/dev/minho_team_pihw/src/mcp3008.c" "/home/pi/dev/minho_team_pihw/CMakeFiles/mcp3k8.dir/src/mcp3008.c.o"
   )
 set(CMAKE_C_COMPILER_ID "GNU")
 

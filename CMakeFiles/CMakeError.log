@@ -1,24 +1,24 @@
 Determining if the pthread_create exist failed with the following output:
-Change Dir: /home/pi/dev/test/CMakeFiles/CMakeTmp
+Change Dir: /home/pi/dev/minho_team_pihw/CMakeFiles/CMakeTmp
 
-Run Build Command:"/usr/bin/make" "cmTC_31c25/fast"
-/usr/bin/make -f CMakeFiles/cmTC_31c25.dir/build.make CMakeFiles/cmTC_31c25.dir/build
-make[1]: Entering directory '/home/pi/dev/test/CMakeFiles/CMakeTmp'
-Building C object CMakeFiles/cmTC_31c25.dir/CheckSymbolExists.c.o
-/usr/bin/cc     -o CMakeFiles/cmTC_31c25.dir/CheckSymbolExists.c.o   -c /home/pi/dev/test/CMakeFiles/CMakeTmp/CheckSymbolExists.c
-Linking C executable cmTC_31c25
-/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_31c25.dir/link.txt --verbose=1
-/usr/bin/cc       CMakeFiles/cmTC_31c25.dir/CheckSymbolExists.c.o  -o cmTC_31c25 -rdynamic 
-CMakeFiles/cmTC_31c25.dir/CheckSymbolExists.c.o: In function `main':
+Run Build Command:"/usr/bin/make" "cmTC_efa90/fast"
+/usr/bin/make -f CMakeFiles/cmTC_efa90.dir/build.make CMakeFiles/cmTC_efa90.dir/build
+make[1]: Entering directory '/home/pi/dev/minho_team_pihw/CMakeFiles/CMakeTmp'
+Building C object CMakeFiles/cmTC_efa90.dir/CheckSymbolExists.c.o
+/usr/bin/cc    -std=c11    -o CMakeFiles/cmTC_efa90.dir/CheckSymbolExists.c.o   -c /home/pi/dev/minho_team_pihw/CMakeFiles/CMakeTmp/CheckSymbolExists.c
+Linking C executable cmTC_efa90
+/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_efa90.dir/link.txt --verbose=1
+/usr/bin/cc   -std=c11     CMakeFiles/cmTC_efa90.dir/CheckSymbolExists.c.o  -o cmTC_efa90 -rdynamic 
+CMakeFiles/cmTC_efa90.dir/CheckSymbolExists.c.o: In function `main':
 CheckSymbolExists.c:(.text+0x38): undefined reference to `pthread_create'
 collect2: error: ld returned 1 exit status
-CMakeFiles/cmTC_31c25.dir/build.make:97: recipe for target 'cmTC_31c25' failed
-make[1]: *** [cmTC_31c25] Error 1
-make[1]: Leaving directory '/home/pi/dev/test/CMakeFiles/CMakeTmp'
-Makefile:126: recipe for target 'cmTC_31c25/fast' failed
-make: *** [cmTC_31c25/fast] Error 2
+CMakeFiles/cmTC_efa90.dir/build.make:97: recipe for target 'cmTC_efa90' failed
+make[1]: *** [cmTC_efa90] Error 1
+make[1]: Leaving directory '/home/pi/dev/minho_team_pihw/CMakeFiles/CMakeTmp'
+Makefile:126: recipe for target 'cmTC_efa90/fast' failed
+make: *** [cmTC_efa90/fast] Error 2
 
-File /home/pi/dev/test/CMakeFiles/CMakeTmp/CheckSymbolExists.c:
+File /home/pi/dev/minho_team_pihw/CMakeFiles/CMakeTmp/CheckSymbolExists.c:
 /* */
 #include <pthread.h>
 
@@ -34,22 +34,22 @@ int main(int argc, char** argv)
 }
 
 Determining if the function pthread_create exists in the pthreads failed with the following output:
-Change Dir: /home/pi/dev/test/CMakeFiles/CMakeTmp
+Change Dir: /home/pi/dev/minho_team_pihw/CMakeFiles/CMakeTmp
 
-Run Build Command:"/usr/bin/make" "cmTC_ce90c/fast"
-/usr/bin/make -f CMakeFiles/cmTC_ce90c.dir/build.make CMakeFiles/cmTC_ce90c.dir/build
-make[1]: Entering directory '/home/pi/dev/test/CMakeFiles/CMakeTmp'
-Building C object CMakeFiles/cmTC_ce90c.dir/CheckFunctionExists.c.o
-/usr/bin/cc    -DCHECK_FUNCTION_EXISTS=pthread_create   -o CMakeFiles/cmTC_ce90c.dir/CheckFunctionExists.c.o   -c /usr/share/cmake-3.6/Modules/CheckFunctionExists.c
-Linking C executable cmTC_ce90c
-/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_ce90c.dir/link.txt --verbose=1
-/usr/bin/cc   -DCHECK_FUNCTION_EXISTS=pthread_create    CMakeFiles/cmTC_ce90c.dir/CheckFunctionExists.c.o  -o cmTC_ce90c -rdynamic -lpthreads 
+Run Build Command:"/usr/bin/make" "cmTC_a288e/fast"
+/usr/bin/make -f CMakeFiles/cmTC_a288e.dir/build.make CMakeFiles/cmTC_a288e.dir/build
+make[1]: Entering directory '/home/pi/dev/minho_team_pihw/CMakeFiles/CMakeTmp'
+Building C object CMakeFiles/cmTC_a288e.dir/CheckFunctionExists.c.o
+/usr/bin/cc    -std=c11 -DCHECK_FUNCTION_EXISTS=pthread_create   -o CMakeFiles/cmTC_a288e.dir/CheckFunctionExists.c.o   -c /usr/share/cmake-3.6/Modules/CheckFunctionExists.c
+Linking C executable cmTC_a288e
+/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_a288e.dir/link.txt --verbose=1
+/usr/bin/cc   -std=c11 -DCHECK_FUNCTION_EXISTS=pthread_create    CMakeFiles/cmTC_a288e.dir/CheckFunctionExists.c.o  -o cmTC_a288e -rdynamic -lpthreads 
 /usr/bin/ld: cannot find -lpthreads
 collect2: error: ld returned 1 exit status
-CMakeFiles/cmTC_ce90c.dir/build.make:97: recipe for target 'cmTC_ce90c' failed
-make[1]: *** [cmTC_ce90c] Error 1
-make[1]: Leaving directory '/home/pi/dev/test/CMakeFiles/CMakeTmp'
-Makefile:126: recipe for target 'cmTC_ce90c/fast' failed
-make: *** [cmTC_ce90c/fast] Error 2
+CMakeFiles/cmTC_a288e.dir/build.make:97: recipe for target 'cmTC_a288e' failed
+make[1]: *** [cmTC_a288e] Error 1
+make[1]: Leaving directory '/home/pi/dev/minho_team_pihw/CMakeFiles/CMakeTmp'
+Makefile:126: recipe for target 'cmTC_a288e/fast' failed
+make: *** [cmTC_a288e/fast] Error 2
 
 

@@ -48,10 +48,10 @@ RM = /usr/bin/cmake -E remove -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /home/pi/dev/test
+CMAKE_SOURCE_DIR = /home/pi/dev/minho_team_pihw
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /home/pi/dev/test
+CMAKE_BINARY_DIR = /home/pi/dev/minho_team_pihw
 
 #=============================================================================
 # Targets provided globally by CMake.
@@ -80,9 +80,9 @@ rebuild_cache/fast: rebuild_cache
 
 # The main all target
 all: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/pi/dev/test/CMakeFiles /home/pi/dev/test/CMakeFiles/progress.marks
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/pi/dev/minho_team_pihw/CMakeFiles /home/pi/dev/minho_team_pihw/CMakeFiles/progress.marks
 	$(MAKE) -f CMakeFiles/Makefile2 all
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/pi/dev/test/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/pi/dev/minho_team_pihw/CMakeFiles 0
 .PHONY : all
 
 # The main clean target
@@ -123,6 +123,19 @@ main/fast:
 	$(MAKE) -f CMakeFiles/main.dir/build.make CMakeFiles/main.dir/build
 .PHONY : main/fast
 
+#=============================================================================
+# Target rules for targets named mcp3k8
+
+# Build rule for target.
+mcp3k8: cmake_check_build_system
+	$(MAKE) -f CMakeFiles/Makefile2 mcp3k8
+.PHONY : mcp3k8
+
+# fast build rule for target.
+mcp3k8/fast:
+	$(MAKE) -f CMakeFiles/mcp3k8.dir/build.make CMakeFiles/mcp3k8.dir/build
+.PHONY : mcp3k8/fast
+
 src/main.o: src/main.c.o
 
 .PHONY : src/main.o
@@ -156,7 +169,7 @@ src/mcp3008.o: src/mcp3008.c.o
 
 # target to build an object file
 src/mcp3008.c.o:
-	$(MAKE) -f CMakeFiles/main.dir/build.make CMakeFiles/main.dir/src/mcp3008.c.o
+	$(MAKE) -f CMakeFiles/mcp3k8.dir/build.make CMakeFiles/mcp3k8.dir/src/mcp3008.c.o
 .PHONY : src/mcp3008.c.o
 
 src/mcp3008.i: src/mcp3008.c.i
@@ -165,7 +178,7 @@ src/mcp3008.i: src/mcp3008.c.i
 
 # target to preprocess a source file
 src/mcp3008.c.i:
-	$(MAKE) -f CMakeFiles/main.dir/build.make CMakeFiles/main.dir/src/mcp3008.c.i
+	$(MAKE) -f CMakeFiles/mcp3k8.dir/build.make CMakeFiles/mcp3k8.dir/src/mcp3008.c.i
 .PHONY : src/mcp3008.c.i
 
 src/mcp3008.s: src/mcp3008.c.s
@@ -174,7 +187,7 @@ src/mcp3008.s: src/mcp3008.c.s
 
 # target to generate assembly for a file
 src/mcp3008.c.s:
-	$(MAKE) -f CMakeFiles/main.dir/build.make CMakeFiles/main.dir/src/mcp3008.c.s
+	$(MAKE) -f CMakeFiles/mcp3k8.dir/build.make CMakeFiles/mcp3k8.dir/src/mcp3008.c.s
 .PHONY : src/mcp3008.c.s
 
 # Help Target
@@ -186,6 +199,7 @@ help:
 	@echo "... edit_cache"
 	@echo "... rebuild_cache"
 	@echo "... main"
+	@echo "... mcp3k8"
 	@echo "... src/main.o"
 	@echo "... src/main.i"
 	@echo "... src/main.s"
