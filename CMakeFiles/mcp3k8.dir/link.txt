@@ -1,1 +1,0 @@
-/usr/bin/cc  -fPIC  -std=c11  -shared -Wl,-soname,libmcp3k8.so -o libs/libmcp3k8.so CMakeFiles/mcp3k8.dir/src/mcp3008.c.o  -L/home/pi/dev/minho_team_pihw/libs 

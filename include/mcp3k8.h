@@ -37,11 +37,11 @@ class MCP3k8{
 
    /// \brief opens SPI interface
    /// \return - <0 for error on closing.
-   int open();
+   int openMCP3k8();
 
    /// \brief closes SPI interface
    /// \return - <0 for error on closing.
-   int close();
+   int closeMCP3k8();
 
    // \brief function that reads a channel
    /// \param channel - number of the channel to be read

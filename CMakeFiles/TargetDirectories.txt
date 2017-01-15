@@ -1,5 +1,0 @@
-/home/pi/dev/minho_team_pihw/CMakeFiles/edit_cache.dir
-/home/pi/dev/minho_team_pihw/CMakeFiles/rebuild_cache.dir
-/home/pi/dev/minho_team_pihw/CMakeFiles/main.dir
-/home/pi/dev/minho_team_pihw/CMakeFiles/Omni3MD.dir
-/home/pi/dev/minho_team_pihw/CMakeFiles/mcp3k8.dir

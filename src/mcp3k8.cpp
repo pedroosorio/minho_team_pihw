@@ -8,21 +8,20 @@ MCP3k8::MCP3k8(SPI_DEV channel, uint fclk, uchar mode, uchar bitsWord, float vre
    memset(channels,0,sizeof(channels));  
    init = false;
    spi_fd = -1;
-   memcpy(spi_dev_name,"/dev/spidev0.");
+   memcpy(spi_dev_name,"/dev/spidev0.",14*sizeof(char));
    spi_channel = 0;
    spi_fclk = 1000000; //1MHz
    spi_bitsWord = 8;
    sz_ioc = sizeof(struct spi_ioc_transfer);
-   memset(spi_type_ioc,0,sz_ioc);
+   memset(&spi_type_ioc,0,sz_ioc);
    sz_dout = 3*sizeof(uchar);
    memset(data_out,0,sz_dout);
    voltage_reference = 3.3;
 
    //Assignings and SPI interface initialization
-   int ret = -1;
    if(channel==SPI_DEV_0){strcat(spi_dev_name,"0\0");}
    else if(channel==SPI_DEV_1){strcat(spi_dev_name,"1\0");}
-   else {perror("Invalid SPI Channel"); return ret;} 
+   else {perror("Invalid SPI Channel"); return;} 
    printf("_MCP3008: Opening MCP3008 in %s\n",spi_dev_name);
    
    spi_channel = channel;
@@ -31,12 +30,15 @@ MCP3k8::MCP3k8(SPI_DEV channel, uint fclk, uchar mode, uchar bitsWord, float vre
    spi_bitsWord = bitsWord;
    voltage_reference = vref;
    
-   if(open()>=0) printf("_MCP3008: Initialization Successful.\n");
+   if(openMCP3k8()>=0) printf("_MCP3008: Initialization Successful.\n");
    else printf("_MCP3008: Initialization Failed.\n");
 }
 
-int MCP3k8::open()
+int MCP3k8::openMCP3k8()
 {
+   if(init) { printf("_MCP3008: SPI Interface already opened"); return -1; }
+
+   int ret = -1;
    spi_fd = open(spi_dev_name,O_RDWR);
    if(spi_fd<0) { perror("_MCP3008: Couldn't open SPI Interface."); return -1; }
    
@@ -75,7 +77,7 @@ int MCP3k8::open()
    return spi_fd;
 }
 
-int MCP3k8::close()
+int MCP3k8::closeMCP3k8()
 {
    int ret = -1;
    if(spi_fd<0) {
@@ -83,7 +85,7 @@ int MCP3k8::close()
       return ret;
    }
 
-   ret = close(fd);
+   ret = close(spi_fd);
    if(ret<0) { perror("_MCP3008: Couldn't close SPI Interface."); }
    else { 
       init = false; 
@@ -116,7 +118,7 @@ void MCP3k8::readAll(float *vec)
 {
    if(!init) { perror(MISSING_INIT); return; }
    for(uint i=0;i<N_CHANNELS;i++){
-      channels[i] = read_channel_mcp3k8(vref, i);
+      channels[i] = readChannel(i);
    }
    memcpy(channels,vec,sizeof(channels));
 }
@@ -135,8 +137,6 @@ int MCP3k8::spi_rw(uchar *data, uint length){
    }
 
    ret = ioctl (spi_fd, SPI_IOC_MESSAGE(length), &spi_transfer) ;
-
    if(ret<0){perror("_MCP3008: Couldn't read form device.\n"); }
-
    return ret;
 }

@@ -17,7 +17,7 @@ set_target_properties( mcp3k8
     PROPERTIES
     LIBRARY_OUTPUT_DIRECTORY ${MLIB_DIR}
 )
-target_compile_features(Omni3MD PRIVATE cxx_range_for)
+target_compile_features(mcp3k8 PRIVATE cxx_range_for)
 ##
 
 ## Compile Omni3MD as a shared library
@@ -34,7 +34,7 @@ target_compile_features(Omni3MD PRIVATE cxx_range_for)
 
 
 ## Compile program
-set(SRC ${SDIR}/main.c)
+set(SRC ${SDIR}/main.cpp)
 message(STATUS "Source directory: " ${SDIR})
 add_executable(main ${SRC})
 target_link_libraries(main wiringPi ${CMAKE_THREAD_LIBS_INIT} mcp3k8 Omni3MD)
