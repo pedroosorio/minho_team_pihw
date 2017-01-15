@@ -14,8 +14,8 @@ Omni3MD::Omni3MD(byte omniAddress)
    init = false;
    device_name = "/dev/i2c-1";
 
-   if(i2c_connect(omniAddress)>0)printf("Omni3MD: Initialization Successful.\n");
-   else printf("Omni3MD: Initialization Failed.\n");
+   if(i2c_connect(omniAddress)>0)printf("_OMNI3MD: Initialization Successful.\n");
+   else printf("_OMNI3MD: Initialization Failed.\n");
 }
 
 /* Setup Routines */
@@ -33,7 +33,7 @@ int Omni3MD::i2c_connect(byte omniAddress)
 	}
 	
    if (ioctl (i2c_fd, I2C_SLAVE, i2c_slave_address) < 0){
-      perror("_OMNI3MD: Couldn't access I2C Device @%x.",i2c_slave_address);
+      perror("_OMNI3MD: Couldn't access I2C Device.");
       return -1;
    }
 
@@ -43,14 +43,25 @@ int Omni3MD::i2c_connect(byte omniAddress)
 
 void Omni3MD::set_i2c_address (byte newAddress)
 {
+   byte buffer[]={newAddress, KEY1, newAddress, KEY2};
+   i2cSendData(COMMAND_I2C_ADD,buffer,sizeof(buffer));
+   i2c_slave_address = newAddress;
+
+   if (ioctl (i2c_fd, I2C_SLAVE, i2c_slave_address) < 0){
+      perror("_OMNI3MD: Couldn't access I2C Device.");
+   }
 }
  
 void Omni3MD::set_i2c_timeout (byte timeout)
 {
+   byte buffer[]={timeout, KEY1, timeout, KEY2}; 
+   i2cSendData(COMMAND_TIMEOUT_I2C,buffer,sizeof(buffer));
 }
 
 void Omni3MD::calibrate(bool way1,bool way2,bool way3)
 {
+   byte buffer[]={(byte)way1, (byte)way2,(byte)way3, KEY1, KEY2};
+   i2cSendData(COMMAND_CALIBRATE,buffer,sizeof(buffer));
 }
 
 void Omni3MD::set_PID(int Kp, int Ki, int Kd)
@@ -67,6 +78,8 @@ void Omni3MD::set_enc_value(byte encoder, int encValue)
 
 void Omni3MD::set_prescaler(byte encoder, byte value)
 {
+   byte buffer[]={encoder,value,KEY1,KEY2};
+   i2cSendData(COMMAND_PRESCALER_CFG,buffer,sizeof(buffer));
 }
 
 void Omni3MD::set_differential(double axis_radius, double whell_radius, double gearbox_factor, double encoder_cpr)
@@ -78,17 +91,20 @@ void Omni3MD::set_differential(double axis_radius, double whell_radius, double g
 /*************************************************************/
 float Omni3MD::read_temperature()
 {
-   return 0.0;
+   return (float)(i2cRequestWord(COMMAND_TEMP))/10.0;
 }
 
 float Omni3MD::read_battery()
 {
-   return 0.0;
+   return (float)(i2cRequestWord(COMMAND_BAT))/10.0;
 }
 
 float Omni3MD::read_firmware()
 {
-   return 0.0;
+   byte firmI=i2cRequestByte(COMMAND_FIRMWARE_INT);
+   byte firmD=i2cRequestByte(COMMAND_FIRMWARE_DEC);
+   int firmwareValue=(firmI*100)+firmD;
+   return (float)((firmwareValue/100.0));
 }
 
 void Omni3MD::read_firmware(byte*,byte*,byte*)
@@ -97,37 +113,37 @@ void Omni3MD::read_firmware(byte*,byte*,byte*)
 
 byte Omni3MD::read_control_rate()
 {
-   return 0;
+   return i2cRequestByte(COMMAND_CTRL_RATE);
 }
 
 int Omni3MD::read_enc1()
 {
-   return 0;
+   return i2cRequestWord(COMMAND_ENC1_INC);
 }
 
 int Omni3MD::read_enc2()
 {
-   return 0;
+   return i2cRequestWord(COMMAND_ENC2_INC);
 }
 
 int Omni3MD::read_enc3()
 {
-   return 0;
+   return i2cRequestWord(COMMAND_ENC3_INC);
 }
 
 int Omni3MD::read_enc1_max()
 {
-   return 0;
+   return i2cRequestWord(COMMAND_ENC1_MAX);
 }
 
 int Omni3MD::read_enc2_max()
 {
-   return 0;
+   return i2cRequestWord(COMMAND_ENC2_MAX);
 }
 
 int Omni3MD::read_enc3_max()
 {
-   return 0;
+   return i2cRequestWord(COMMAND_ENC3_MAX);
 }
 
 void Omni3MD::read_encoders(int*,int*,int*)
@@ -175,10 +191,14 @@ void Omni3MD::mov_lin1m_nopid(byte motor,int speed)
 
 void Omni3MD::stop_motors()
 {
+   byte buffer[]={KEY1,KEY2};
+   i2cSendData(COMMAND_STOP,buffer,sizeof(buffer));
 }
 
 void Omni3MD::save_position()
 {
+   byte buffer[]={KEY1,KEY2};
+   i2cSendData(COMMAND_SAVE_POS,buffer,sizeof(buffer));
 }
 /*************************************************************/
 
@@ -196,9 +216,10 @@ int Omni3MD::i2cRequestWord(byte command)
   else return data.word & 0xFFFF ;   
 }
 
-void Omni3MD::i2cSendData(byte command, byte buffer[], byte numBytes)
+int Omni3MD::i2cSendData(byte command, byte buffer[], byte numBytes)
 {
    union i2c_smbus_data data; 
-   if (i2c_smbus_access (i2c_fd, I2C_SMBUS_WRITE, command, numBytes, &buffer)) return -1 ;  
+   memcpy(data.block,buffer,numBytes*sizeof(byte));
+   if (i2c_smbus_access (i2c_fd, I2C_SMBUS_WRITE, command, I2C_SMBUS_BLOCK_DATA, &data)) return -1 ;  
    else return numBytes;
 }

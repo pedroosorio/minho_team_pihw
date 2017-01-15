@@ -1,6 +1,7 @@
 //Test program for SPI and I2C in RPI
 
 #include "mcp3k8.h"
+#include "Omni3MD.h"
 #include <sys/time.h>
 
 int fd = -1;
@@ -14,5 +15,8 @@ int main(int argc, char**argv)
       printf("MCP3008 CH%d : %.2f\n",i,val);
    }
    bat_measure.closeMCP3k8();
+   
+   Omni3MD omni(0x10);
+   printf("%d",omni.read_enc1());
    return 0;
 }

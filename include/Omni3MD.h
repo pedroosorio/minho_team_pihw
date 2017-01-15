@@ -18,6 +18,8 @@
 #include <fcntl.h>
 #include <sys/ioctl.h>
 #include <asm/ioctl.h>
+#include <sys/types.h>
+#include <iostream>
 
 class Omni3MD
 {
@@ -75,8 +77,8 @@ class Omni3MD
    byte i2c_slave_address;
 
    int i2cRequestByte(byte command);
-   int  i2cRequestWord(byte command);
-   void i2cSendData(byte command, byte buffer[], byte numBytes);
+   int i2cRequestWord(byte command);
+   int i2cSendData(byte command, byte buffer[], byte numBytes);
 
    static inline int i2c_smbus_access (int fd, char rw, uint8_t command, int size, union i2c_smbus_data *data)
    {

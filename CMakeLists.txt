@@ -1,6 +1,19 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(minho_team_pihw CXX)
 
+find_package(catkin REQUIRED COMPONENTS
+   roscpp
+   std_msgs
+   message_generation   
+   genmsg   
+)
+
+catkin_package(
+   #  INCLUDE_DIRS include
+   #  LIBRARIES minho_team
+   CATKIN_DEPENDS message_runtime std_msgs
+)
+
 set(PDIR ${minho_team_pihw_SOURCE_DIR})
 message(STATUS "Current directory: " ${PDIR})
 find_package(wiringPi REQUIRED)
@@ -29,13 +42,10 @@ set_target_properties( Omni3MD
 target_compile_features(Omni3MD PRIVATE cxx_range_for)
 ##
 
-
-
-
-
 ## Compile program
 set(SRC ${SDIR}/main.cpp)
 message(STATUS "Source directory: " ${SDIR})
 add_executable(main ${SRC})
 target_link_libraries(main wiringPi ${CMAKE_THREAD_LIBS_INIT} mcp3k8 Omni3MD)
+add_dependencies(main Omni3MD mcp3k8 minho_team_ros_gencpp)
 ##
