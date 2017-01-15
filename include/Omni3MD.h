@@ -2,7 +2,7 @@
    Omni3MD.h - Library for interfacing with omni-3md (3 motor driver controller) from www.botnroll.com
    Created by Nino Pereira, April 28, 2011.
    Last Update by José Cruz, July 23, 2013.
-   Ported to RaspberryPi 3 by Pedro Osório, January, 2017.
+   Ported to RaspberryPi 3's Raspbian by Pedro Osório, January, 2017.
    Released into the public domain.
 */
 
@@ -10,6 +10,14 @@
 #define Omni3MD_h
 
 #include "omni3md_defines.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdint.h>
+#include <errno.h>
+#include <string.h>
+#include <fcntl.h>
+#include <sys/ioctl.h>
+#include <asm/ioctl.h>
 
 class Omni3MD
 {
@@ -18,7 +26,7 @@ class Omni3MD
 
    /* Setup Routines */
    /*************************************************************/
-   void i2c_connect(byte omniAddress);
+   int i2c_connect(byte omniAddress);
    void set_i2c_address (byte newAddress);
    void set_i2c_timeout (byte timeout);
    void calibrate(bool way1,bool way2,bool way3);
@@ -61,11 +69,25 @@ class Omni3MD
    /*************************************************************/
 
    private:
-   byte _omniAddress;
-   byte i2cRequestByte(byte addressValue, byte command);
-   int  i2cRequestWord(byte addressValue, byte command);
-   void i2cRequestData(byte adreessValue, byte command);
-   void i2cSendData(byte addressValue, byte command, byte buffer[], byte numBytes);
+   int i2c_fd;
+   bool init;
+   std::string device_name;
+   byte i2c_slave_address;
+
+   int i2cRequestByte(byte command);
+   int  i2cRequestWord(byte command);
+   void i2cSendData(byte command, byte buffer[], byte numBytes);
+
+   static inline int i2c_smbus_access (int fd, char rw, uint8_t command, int size, union i2c_smbus_data *data)
+   {
+      struct i2c_smbus_ioctl_data args ;
+
+      args.read_write = rw ;
+      args.command    = command ;
+      args.size       = size ;
+      args.data       = data ;
+      return ioctl (fd, I2C_SMBUS, &args) ;
+   }
 };
 
 #endif

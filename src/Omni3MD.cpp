@@ -10,12 +10,35 @@
 
 Omni3MD::Omni3MD(byte omniAddress)
 {
+   i2c_slave_address = omniAddress;
+   init = false;
+   device_name = "/dev/i2c-1";
+
+   if(i2c_connect(omniAddress)>0)printf("Omni3MD: Initialization Successful.\n");
+   else printf("Omni3MD: Initialization Failed.\n");
 }
 
 /* Setup Routines */
 /*************************************************************/
-void Omni3MD::i2c_connect(byte omniAddress)
+int Omni3MD::i2c_connect(byte omniAddress)
 {
+   if(init) { printf("_OMNI3MD: I2C Interface already opened"); return -1; }
+
+   printf("_OMNI3MD: Opening Omni3MD in %s\n",device_name.c_str());
+   i2c_slave_address = omniAddress;
+   /* Open I2C Interface */
+	if((i2c_fd = open(device_name.c_str(), O_RDWR)) < 0){
+		perror("_OMNI3MD: Couldn't open I2C Interface.");
+      return -1;
+	}
+	
+   if (ioctl (i2c_fd, I2C_SLAVE, i2c_slave_address) < 0){
+      perror("_OMNI3MD: Couldn't access I2C Device @%x.",i2c_slave_address);
+      return -1;
+   }
+
+   init = true;
+   return i2c_fd;
 }
 
 void Omni3MD::set_i2c_address (byte newAddress)
@@ -159,20 +182,23 @@ void Omni3MD::save_position()
 }
 /*************************************************************/
 
-byte Omni3MD::i2cRequestByte(byte addressValue, byte command)
+int Omni3MD::i2cRequestByte(byte command)
 {
-   return 0;
+  union i2c_smbus_data data;
+  if(i2c_smbus_access (i2c_fd, I2C_SMBUS_READ, command, I2C_SMBUS_BYTE_DATA, &data)) return -1 ;
+  else return data.byte & 0xFF ;   
 }
 
-int Omni3MD::i2cRequestWord(byte addressValue, byte command)
+int Omni3MD::i2cRequestWord(byte command)
 {
-   return 0;
+  union i2c_smbus_data data;
+  if (i2c_smbus_access (i2c_fd, I2C_SMBUS_READ, command, I2C_SMBUS_WORD_DATA, &data)) return -1 ;
+  else return data.word & 0xFFFF ;   
 }
 
-void Omni3MD::i2cRequestData(byte adreessValue, byte command)
+void Omni3MD::i2cSendData(byte command, byte buffer[], byte numBytes)
 {
-}
-
-void Omni3MD::i2cSendData(byte addressValue, byte command, byte buffer[], byte numBytes)
-{
+   union i2c_smbus_data data; 
+   if (i2c_smbus_access (i2c_fd, I2C_SMBUS_WRITE, command, numBytes, &buffer)) return -1 ;  
+   else return numBytes;
 }
