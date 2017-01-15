@@ -49,3 +49,4 @@ typedef unsigned char byte;
 #define COMMAND_ENC3_MAX 0xD0 //Read encoder1 maximum value at calibration
 /*********************************************************/
 
+#define DEFAULT_OMNI_ADDRESS 0x30

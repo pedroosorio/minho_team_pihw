@@ -3,20 +3,19 @@
 #include "mcp3k8.h"
 #include "Omni3MD.h"
 #include <sys/time.h>
+#include <pthread.h>
 
-int fd = -1;
-struct timeval tv1, tv2;
-float val = 0;
 int main(int argc, char**argv)
 {
-   MCP3k8 bat_measure = MCP3k8(SPI_DEV_1,1000000,SPI_MODE_0,8,4.8);
-   for(int i=0;i<4;i++){
-      val = bat_measure.readChannel(i);
-      printf("MCP3008 CH%d : %.2f\n",i,val);
-   }
-   bat_measure.closeMCP3k8();
+   printf("Omni3MD library test.\n");
+   Omni3MD omni(DEFAULT_OMNI_ADDRESS);
+   pthread_t main_thread = pthread_self();
    
-   Omni3MD omni(0x10);
-   printf("%d",omni.read_enc1());
+   int enc1, enc2, enc3;
+   for(int i=0;i<500;i++){
+      enc1 = omni.read_enc1(); enc2 = omni.read_enc2(); enc3 = omni.read_enc3();
+      printf("Encoders: %d | %d | %d \n",enc1,enc2,enc3);
+      sleep(1);
+   }
    return 0;
 }
