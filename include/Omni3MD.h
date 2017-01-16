@@ -29,6 +29,7 @@ class Omni3MD
    /* Setup Routines */
    /*************************************************************/
    int i2c_connect(uint8_t omniAddress);
+   int i2c_start_transmission();
    void set_i2c_address (uint8_t newAddress);
    void set_i2c_timeout (uint8_t timeout);
    void calibrate(bool way1,bool way2,bool way3);

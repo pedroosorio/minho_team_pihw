@@ -41,10 +41,19 @@ int Omni3MD::i2c_connect(uint8_t omniAddress)
    return i2c_fd;
 }
 
+int Omni3MD::i2c_start_transmission()
+{
+   if (ioctl (i2c_fd, I2C_SLAVE, i2c_slave_address) < 0){
+      perror("_OMNI3MD: Couldn't access I2C Device.");
+      return -1;
+    }
+   return i2c_fd;
+}
+
 void Omni3MD::set_i2c_address (uint8_t newAddress)
 {
    uint8_t buffer[]={newAddress, KEY1, newAddress, KEY2};
-   i2cSendData(COMMAND_I2C_ADD,buffer,sizeof(buffer));
+   i2cSendData(COMMAND_I2C_ADD,sizeof(buffer),buffer);
    i2c_slave_address = newAddress;
 
    if (ioctl (i2c_fd, I2C_SLAVE, i2c_slave_address) < 0){
@@ -55,35 +64,47 @@ void Omni3MD::set_i2c_address (uint8_t newAddress)
 void Omni3MD::set_i2c_timeout (uint8_t timeout)
 {
    uint8_t buffer[]={timeout, KEY1, timeout, KEY2}; 
-   i2cSendData(COMMAND_TIMEOUT_I2C,buffer,sizeof(buffer));
+   i2cSendData(COMMAND_TIMEOUT_I2C,sizeof(buffer),buffer);
 }
 
 void Omni3MD::calibrate(bool way1,bool way2,bool way3)
 {
    uint8_t buffer[]={(uint8_t)way1, (uint8_t)way2,(uint8_t)way3, KEY1, KEY2};
-   i2cSendData(COMMAND_CALIBRATE,buffer,sizeof(buffer));
+   i2cSendData(COMMAND_CALIBRATE,sizeof(buffer),buffer);
 }
 
 void Omni3MD::set_PID(int Kp, int Ki, int Kd)
 {
+   uint8_t buffer[] = {(uint8_t)(Kp>>8),(uint8_t)(Kp&0xFF),(uint8_t)(Ki>>8),(uint8_t)(Ki&0xFF),(uint8_t)(Kd>>8),(uint8_t)(Kd&0xFF)};
+   i2cSendData(COMMAND_GAIN_CFG,sizeof(buffer),buffer);
 }
 
 void Omni3MD::set_ramp(int time, int slope, int Kl)
 {
+   uint8_t buffer[] = {(uint8_t)(time>>8),(uint8_t)(time&0xFF),(uint8_t)(slope>>8),(uint8_t)(slope&0xFF),(uint8_t)(Kl>>8),(uint8_t)(Kl&0xFF)};
+   i2cSendData(COMMAND_RAMP_CFG,sizeof(buffer),buffer);
 }
 
 void Omni3MD::set_enc_value(uint8_t encoder, int encValue)
 {
+   uint8_t buffer[] = {encoder,(uint8_t)(encValue>>8),(uint8_t)(encValue&0xFF),KEY1,KEY2};
+   i2cSendData(COMMAND_POS_ENC_PRESET,sizeof(buffer),buffer);
 }
 
 void Omni3MD::set_prescaler(uint8_t encoder, uint8_t value)
 {
    uint8_t buffer[]={encoder,value,KEY1,KEY2};
-   i2cSendData(COMMAND_PRESCALER_CFG,buffer,sizeof(buffer));
+   i2cSendData(COMMAND_PRESCALER_CFG,sizeof(buffer),buffer);
 }
 
 void Omni3MD::set_differential(double axis_radius, double whell_radius, double gearbox_factor, double encoder_cpr)
 {
+   int axis=(int)(axis_radius*100);
+   int wheel=(int)(whell_radius*100);
+   int gearb=(int)(gearbox_factor*10);
+   int cpr=(int)(encoder_cpr*10);
+   uint8_t buffer[] = {(uint8_t)(axis>>8),(uint8_t)(axis&0xFF),(uint8_t)(wheel>>8),(uint8_t)(wheel&0xFF),(uint8_t)(gearb>>8),(uint8_t)(gearb&0xFF),(uint8_t)(cpr>>8),(uint8_t)(cpr&0xFF)};
+   i2cSendData(COMMAND_POS_ENC_PRESET,sizeof(buffer),buffer);   
 }
 /*************************************************************/
    
@@ -107,8 +128,11 @@ float Omni3MD::read_firmware()
    return (float)((firmwareValue/100.0));
 }
 
-void Omni3MD::read_firmware(uint8_t*,uint8_t*,uint8_t*)
+void Omni3MD::read_firmware(uint8_t* firm1,uint8_t* firm2 ,uint8_t* firm3)
 {
+   uint8_t values[3] = {0,0,0};
+   i2cRequestData(COMMAND_FIRMWARE_INT,3,values);  
+   *firm1 = values[0]; *firm2 = values[1]; *firm3 = values[2];
 }
 
 uint8_t Omni3MD::read_control_rate()
@@ -146,8 +170,13 @@ int Omni3MD::read_enc3_max()
    return i2cRequestWord(COMMAND_ENC3_MAX);
 }
 
-void Omni3MD::read_encoders(int*,int*,int*)
+void Omni3MD::read_encoders(int* enc1,int* enc2,int* enc3)
 {
+   uint8_t values[6] = {0,0,0,0,0,0};
+   i2cRequestData(COMMAND_ENC1_INC,6,values);
+   *enc1 = ((int)values[0]<<8)|values[1];
+   *enc2 = ((int)values[2]<<8)|values[3];
+   *enc3 = ((int)values[4]<<8)|values[5]; 
 }
 
 void Omni3MD::read_mov_data(int*,int*,int*,float*,float*)
@@ -163,57 +192,77 @@ void Omni3MD::read_all_data(int*,int*,int*,float*,float*,uint8_t*,uint8_t*,uint8
 /*************************************************************/
 void Omni3MD::mov_omni(uint8_t linear_speed,int rotational_speed,int direction)
 {
+   uint8_t buffer[] = {linear_speed,(uint8_t)(rotational_speed>>8),(uint8_t)(rotational_speed&0xFF),(uint8_t)(direction>>8),(uint8_t)(direction&0xFF)};
+   i2cSendData(COMMAND_MOV_OMNI,sizeof(buffer),buffer);
 }
 
 void Omni3MD::mov_dif_si(double linear_speed,double rotational_speed)
 {
+   int lin_speed = (int)(linear_speed*1000);
+   int rot_speed = (int)(rotational_speed*1000);
+
+   uint8_t buffer[] = {(uint8_t)(lin_speed>>8),(uint8_t)(lin_speed&0xFF),(uint8_t)(rot_speed>>8),(uint8_t)(rot_speed&0xFF)};
+   i2cSendData(COMMAND_MOV_DIF_SI,sizeof(buffer),buffer);
 }
 
 void Omni3MD::mov_pos(uint8_t motor,int speed,int encPosition,bool stoptorque)
 {
+   uint8_t buffer[] = {(uint8_t)(speed>>8),(uint8_t)(speed&0xFF),(uint8_t)(encPosition>>8),(uint8_t)(encPosition&0xFF),(uint8_t)stoptorque};
+   i2cSendData(COMMAND_MOV_POS,sizeof(buffer),buffer);
 }
 
 void Omni3MD::mov_lin3m_pid(int speed1,int speed2,int speed3)
 {
+   uint8_t buffer[] = {(uint8_t)(speed1>>8),(uint8_t)(speed1&0xFF),(uint8_t)(speed2>>8),(uint8_t)(speed2&0xFF),(uint8_t)(speed3>>8),(uint8_t)(speed3&0xFF)};
+   i2cSendData(COMMAND_MOV_LIN3M_PID,sizeof(buffer),buffer);
 }
 
 void Omni3MD::mov_lin1m_pid(uint8_t motor,int speed)
 {
+   uint8_t buffer[] = {motor,(uint8_t)(speed>>8),(uint8_t)(speed&0xFF)};
+   i2cSendData(COMMAND_MOV_LIN1M_PID,sizeof(buffer),buffer);
 }
 
 void Omni3MD::mov_lin3m_nopid(int speed1,int speed2,int speed3)
 {
+   uint8_t buffer[] = {(uint8_t)(speed1>>8),(uint8_t)(speed1&0xFF),(uint8_t)(speed2>>8),(uint8_t)(speed2&0xFF),(uint8_t)(speed3>>8),(uint8_t)(speed3&0xFF)};
+   i2cSendData(COMMAND_MOV_LIN3M_NOPID,sizeof(buffer),buffer);
 }
 
 void Omni3MD::mov_lin1m_nopid(uint8_t motor,int speed)
 {
+   uint8_t buffer[] = {motor,(uint8_t)(speed>>8),(uint8_t)(speed&0xFF)};
+   i2cSendData(COMMAND_MOV_LIN1M_NOPID,sizeof(buffer),buffer);
 }
 
 void Omni3MD::stop_motors()
 {
    uint8_t buffer[]={KEY1,KEY2};
-   i2cSendData(COMMAND_STOP,buffer,sizeof(buffer));
+   i2cSendData(COMMAND_STOP,sizeof(buffer),buffer);
 }
 
 void Omni3MD::save_position()
 {
    uint8_t buffer[]={KEY1,KEY2};
-   i2cSendData(COMMAND_SAVE_POS,buffer,sizeof(buffer));
+   i2cSendData(COMMAND_SAVE_POS,sizeof(buffer),buffer);
 }
 /*************************************************************/
 
 int Omni3MD::i2cRequestByte(uint8_t command)
 {
+   i2c_start_transmission();
    return i2c_smbus_read_byte_data(i2c_fd,command);  
 }
 
 int Omni3MD::i2cRequestWord(uint8_t command)
 {
+  i2c_start_transmission();
   return i2c_smbus_read_word_data(i2c_fd,command);   
 }
 
-int i2cRequestData(uint8_t command, uint8_t length, uint8_t* values)
+int Omni3MD::i2cRequestData(uint8_t command, uint8_t length, uint8_t* values)
 {
+   i2c_start_transmission();
    int bytes = i2c_smbus_read_block_data(i2c_fd,command,values);
    if(bytes!=length) return -1;
    else return bytes;
@@ -221,5 +270,6 @@ int i2cRequestData(uint8_t command, uint8_t length, uint8_t* values)
 
 int Omni3MD::i2cSendData(uint8_t command, uint8_t length, uint8_t* values)
 {
+   i2c_start_transmission();
    return i2c_smbus_write_block_data(i2c_fd,command,length,values);
 }
