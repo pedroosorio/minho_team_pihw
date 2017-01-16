@@ -1,8 +1,6 @@
 #define KEY1 0xAA // key used in critical commands
 #define KEY2 0x55 // key used in critical commands
 
-typedef unsigned char byte;
-
 #include <stdint.h>
 #include <linux/i2c-dev.h>
 
