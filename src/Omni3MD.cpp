@@ -198,7 +198,8 @@ void Omni3MD::stop_motors()
 void Omni3MD::save_position()
 {
    byte buffer[]={KEY1,KEY2};
-   i2cSendData(COMMAND_SAVE_POS,buffer,sizeof(buffer));
+   int ret = i2cSendData(COMMAND_SAVE_POS,buffer,sizeof(buffer));
+   printf("Ret %d",ret);
 }
 /*************************************************************/
 
@@ -220,6 +221,6 @@ int Omni3MD::i2cSendData(byte command, byte buffer[], byte numBytes)
 {
    union i2c_smbus_data data; 
    memcpy(data.block,buffer,numBytes*sizeof(byte));
-   if (i2c_smbus_access (i2c_fd, I2C_SMBUS_WRITE, command, I2C_SMBUS_BLOCK_DATA, &data)) return -1 ;  
+   if (i2c_smbus_access (i2c_fd, I2C_SMBUS_WRITE, command, numBytes, &data)) return -1 ;  
    else return numBytes;
 }

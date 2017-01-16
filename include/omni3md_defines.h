@@ -5,7 +5,6 @@ typedef unsigned char byte;
 
 #include <stdint.h>
 #include <linux/i2c-dev.h>
-#include <linux/i2c.h>
 
 /*Read Firmware version*/
 /*********************************************************/

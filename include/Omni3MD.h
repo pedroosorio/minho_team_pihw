@@ -79,17 +79,6 @@ class Omni3MD
    int i2cRequestByte(byte command);
    int i2cRequestWord(byte command);
    int i2cSendData(byte command, byte buffer[], byte numBytes);
-
-   static inline int i2c_smbus_access (int fd, char rw, uint8_t command, int size, union i2c_smbus_data *data)
-   {
-      struct i2c_smbus_ioctl_data args ;
-
-      args.read_write = rw ;
-      args.command    = command ;
-      args.size       = size ;
-      args.data       = data ;
-      return ioctl (fd, I2C_SMBUS, &args) ;
-   }
 };
 
 #endif
