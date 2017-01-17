@@ -22,6 +22,9 @@
 #include "minho_team_ros/requestKick.h"
 // ############################
 
+using minho_team_ros::hardwareInfo;
+using minho_team_ros::controlInfo;
+using minho_team_ros::teleop;
 using minho_team_ros::requestResetEncoders;
 using minho_team_ros::requestResetIMU;
 using minho_team_ros::requestOmniProps;
@@ -43,16 +46,17 @@ pthread_mutex_t hw_mutex = PTHREAD_MUTEX_INITIALIZER;
 /// \brief mutex to protect access to i2c bus
 pthread_mutex_t i2c_mutex = PTHREAD_MUTEX_INITIALIZER;
 
-timeval watchdog_c,watchdog_last;
+/// \brief timestamps to implement safety timeout
+struct timeval t1,t0;
 
 /// \brief publisher of hardwareInfo
 ros::Publisher hw_pub;
 
 /// \brief subscriber of controlInfo
-ros::Publisher control_sub;
+ros::Subscriber control_sub;
 
 /// \brief subscriber of teleop
-ros::Publisher teleop_sub;
+ros::Subscriber teleop_sub;
 
 
 /// \brief Omni3MD object to communicate through I2C bus
@@ -103,9 +107,9 @@ int main(int argc, char**argv)
    // Start node
    ROS_WARN("MinhoTeam pihw_node started running on ROS.");
 	ros::AsyncSpinner spinner(2);
-   pthread_create(th_enc, NULL, readEncoders, &pi_enc);
-   pthread_create(th_bat, NULL, readIMU, &pi_bat);
-   pthread_create(th_imu, NULL, readBatteries, &pi_imu);
+   pthread_create(&th_enc, NULL, readEncoders, &pi_enc);
+   pthread_create(&th_bat, NULL, readIMU, &pi_bat);
+   pthread_create(&th_imu, NULL, readBatteries, &pi_imu);
 	spinner.start();
 
    pthread_join(th_enc, NULL);
@@ -120,8 +124,8 @@ int main(int argc, char**argv)
 void setup_threads()
 {
    pi_enc.id = 1; pi_enc.period_us = 25000; //25ms @ 40Hz  
-   pi_bat.id = 1; pi_bat.period_us = 100000; //0.1s @ 10Hz 
-   pi_imu.id = 1; pi_imu.period_us = 25000; //25ms @ 40Hz 
+   pi_bat.id = 2; pi_bat.period_us = 100000; //0.1s @ 10Hz 
+   pi_imu.id = 3; pi_imu.period_us = 25000; //25ms @ 40Hz 
 }
 
 void *readEncoders(void *per_info)
@@ -129,24 +133,23 @@ void *readEncoders(void *per_info)
    periodic_info *info = (periodic_info *)(per_info);
    make_periodic(info->period_us,info);
 
-   while(ros::ok()){
-      hw_mutex.lock();
+   while(1){
+      pthread_mutex_lock(&hw_mutex);
       //read encoders
-      i2c_mutex.lock();
-      omni.read_encoders(&hw.encoder_1,&hw.encoder_2,&hw.encoder_3);
-      i2c_mutex.unlock();
-      hw_mutex.unlock();
+      pthread_mutex_lock(&i2c_mutex);
+      omni.read_encoders((int*)&hw.encoder_1,(int*)&hw.encoder_2,(int*)&hw.encoder_3);
+      pthread_mutex_unlock(&i2c_mutex);
+      pthread_mutex_unlock(&hw_mutex);
 
-      hw_mutex.lock();
+      pthread_mutex_lock(&hw_mutex);
       //read battery
-      i2c_mutex.lock();
-      hw.battery_main = read_battery();
-      i2c_mutex.unlock();
-
+      pthread_mutex_lock(&i2c_mutex);
+      hw.battery_main = omni.read_battery();
+      pthread_mutex_unlock(&i2c_mutex);
       //publish info
       hw_pub.publish(hw);
-      hw_mutex.unlock();
-      
+      pthread_mutex_unlock(&hw_mutex);
+      ROS_INFO("Encoders read");      
       wait_period(info);
    }
 }
@@ -157,6 +160,7 @@ void *readIMU(void *per_info)
    make_periodic(info->period_us,info);
 
    while(ros::ok()){
+      ROS_INFO("IMU read");
       wait_period(info);
    }
 }
@@ -167,21 +171,21 @@ void *readBatteries(void *per_info)
    make_periodic(info->period_us,info);
 
    while(ros::ok()){
-      hw_mutex.lock();
+      pthread_mutex_lock(&hw_mutex);     
       //read channel 1 (pc_bat)
       hw.battery_pc = adc.readChannel(0);
-      hw_mutex.unlock();
+      pthread_mutex_unlock(&hw_mutex);
 
-      hw_mutex.lock();
+      pthread_mutex_lock(&hw_mutex);
       //read channel 1 (pc_bat)
-      hw.battery_cam = adc.readChannel(1);
-      hw_mutex.unlock();
+      hw.battery_camera = adc.readChannel(1);
+      pthread_mutex_unlock(&hw_mutex);
 
-      hw_mutex.lock();
+      pthread_mutex_lock(&hw_mutex);
       //read channel 3 (free_wheel)
       hw.free_wheel_activated = adc.readChannel(2);
-      hw_mutex.unlock();
-      
+      pthread_mutex_unlock(&hw_mutex);
+ 
       //Grabber readings will go here
 
       // Watch dog for timeout
@@ -189,36 +193,39 @@ void *readBatteries(void *per_info)
       float elapsed = (float)(t1.tv_sec-t0.tv_sec)*1000.0 + (float)(t1.tv_usec-t0.tv_usec)/1000.0;
       //100ms timeout
       if(elapsed>80) {
-         hw_mutex.lock();
-         i2c_mutex.lock();
+         pthread_mutex_lock(&hw_mutex);
+         pthread_mutex_lock(&i2c_mutex);
          omni.stop_motors();
          ROS_ERROR("Timeout reached ... Stopping motors.");
-         hw_mutex.unlock();
-         i2c_mutex.unlock();
+         pthread_mutex_unlock(&i2c_mutex);
+         pthread_mutex_unlock(&hw_mutex);
       }
       t0 = t1;
+
+      ROS_INFO("Bat read %.2f",elapsed);
       wait_period(info);
    }
 }
 
 void controlInfoCallback(const controlInfo::ConstPtr &msg)
 {
-   if((teleop_active && msg.is_teleop)||(!teleop_active && !msg.is_teleop)){
+   if((teleop_active && msg->is_teleop)||(!teleop_active && !msg->is_teleop)){
 
-      int movement_dir = 360-msg.movement_direction; 
+      int movement_dir = 360-msg->movement_direction; 
       
-      hw_mutex.lock();
-      i2c_mutex.lock();
-      if(!hwinfo_msg.free_wheel_activated) omni.mov_omni(msg.linear_velocity,msg.angular_velocity ,movement_dir);
+      pthread_mutex_lock(&hw_mutex); 
+      pthread_mutex_lock(&i2c_mutex);
+      if(!hw.free_wheel_activated) omni.mov_omni(msg->linear_velocity, msg->angular_velocity, movement_dir);
       else omni.stop_motors();
-      hw_mutex.unlock();
-      i2c_mutex.unlock();
-
+      pthread_mutex_unlock(&hw_mutex);
+      pthread_mutex_unlock(&i2c_mutex);
+      
+      gettimeofday(&t0,0);
       //Grabber actuaction will go here 
    }     
 }
 
 void teleopCallback(const teleop::ConstPtr &msg)
 {
-   teleop_active = msg.set_teleop;   
+   teleop_active = msg->set_teleop;   
 }

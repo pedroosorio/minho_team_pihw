@@ -45,7 +45,9 @@ target_compile_features(Omni3MD PRIVATE cxx_range_for)
 ## Compile program
 set(SRC ${SDIR}/main.cpp)
 message(STATUS "Source directory: " ${SDIR})
+include_directories(${catkin_INCLUDE_DIRS})
+include_directories(~/catkin_ws/devel/include)
 add_executable(main ${SRC})
-target_link_libraries(main wiringPi ${CMAKE_THREAD_LIBS_INIT} mcp3k8 Omni3MD)
+target_link_libraries(main wiringPi ${catkin_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT} mcp3k8 Omni3MD)
 add_dependencies(main Omni3MD mcp3k8 minho_team_ros_gencpp)
 ##
