@@ -142,6 +142,10 @@ void setup_threads()
    pi_enc.id = 1; pi_enc.period_us = 25000; //25ms @ 40Hz  
    pi_bat.id = 2; pi_bat.period_us = 100000; //0.1s @ 10Hz 
    pi_imu.id = 3; pi_imu.period_us = 25000; //25ms @ 40Hz 
+   
+   uint8_t f1,f2,f3;
+   omni.read_firmware(&f1,&f2,&f3);
+   ROS_INFO("Omni3MD: \n\t\t\t\tCtrl Rate %d | Firmware v%d.%d.%d |\n\t\t\t\tTemperature %.2f | Encoder Max %d |\n\t\t\t\tBattery %.2f |", omni.read_control_rate(), f1,f2,f3, omni.read_temperature(), omni.read_enc1_max(),omni.read_battery());  
 }
 
 void *readEncoders(void *per_info)
@@ -248,7 +252,7 @@ void controlInfoCallback(const controlInfo::ConstPtr &msg)
 
 void teleopCallback(const teleop::ConstPtr &msg)
 {
-   teleop_active = msg->set_teleop; 
+   teleop_active = msg->set_teleop;
 }
 
 void throw_alarm(BAT_ALARM type)

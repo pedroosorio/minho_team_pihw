@@ -120,7 +120,7 @@ float Omni3MD::read_temperature()
 
 float Omni3MD::read_battery()
 {
-   return i2cRequestWord(COMMAND_BAT)/10.0;
+   return (float)i2cRequestWord(COMMAND_BAT)/10.0;
 }
 
 float Omni3MD::read_firmware()
