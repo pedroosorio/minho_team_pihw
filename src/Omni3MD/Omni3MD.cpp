@@ -11,11 +11,13 @@
 
 #include "Omni3MD/Omni3MD.h"
 
-Omni3MD::Omni3MD(uint8_t omniAddress)
+Omni3MD::Omni3MD(uint8_t omniAddress, pthread_mutex_t *i2c_bus_mutex)
 {
    i2c_slave_address = omniAddress;
+   i2c_mutex = i2c_bus_mutex;
    init = false;
    device_name = "/dev/i2c-1";
+   timeout_active = false;
 
    if(i2c_connect(omniAddress)>0)printf("_OMNI3MD: Initialization Successful.\n");
    else printf("_OMNI3MD: Initialization Failed.\n");
@@ -68,6 +70,21 @@ void Omni3MD::set_i2c_timeout (uint8_t timeout)
 {
    uint8_t buffer[]={timeout, KEY1, timeout, KEY2}; 
    i2cSendData(COMMAND_TIMEOUT_I2C,sizeof(buffer),buffer);
+
+   if(timeout>0){
+      if(i2c_mutex!=NULL){
+         // Create safety here
+         gettimeofday(&t1,0);
+         t0 = t1;
+         unsigned int timeout_us = timeout*10000; //in us
+         watchdog_pi.id = 1; watchdog_pi.period_us = timeout_us;
+         timeout_active = true;
+         pthread_create(&watchdog_thread,NULL,watchdog_timer,this);
+      }else printf("_OMNI3MD: No i2c_bus_mutex provided. This may cause errors in transmissions\n");
+   } else {
+      timeout_active = false;   
+   }
+   
 }
 
 void Omni3MD::calibrate(bool way1,bool way2,bool way3)
@@ -195,12 +212,14 @@ void Omni3MD::read_all_data(int* enc1,int* enc2,int* enc3,float* bat,float* temp
 /*************************************************************/
 void Omni3MD::mov_omni(uint8_t linear_speed,int rotational_speed,int direction)
 {
+   gettimeofday(&t0,0);
    uint8_t buffer[] = {linear_speed,(uint8_t)(rotational_speed>>8),(uint8_t)(rotational_speed&0xFF),(uint8_t)(direction>>8),(uint8_t)(direction&0xFF)};
    i2cSendData(COMMAND_MOV_OMNI,sizeof(buffer),buffer);
 }
 
 void Omni3MD::mov_dif_si(double linear_speed,double rotational_speed)
 {
+   gettimeofday(&t0,0);
    int lin_speed = (int)(linear_speed*1000);
    int rot_speed = (int)(rotational_speed*1000);
 
@@ -210,12 +229,14 @@ void Omni3MD::mov_dif_si(double linear_speed,double rotational_speed)
 
 void Omni3MD::mov_pos(uint8_t motor,int speed,int encPosition,bool stoptorque)
 {
+   gettimeofday(&t0,0);
    uint8_t buffer[] = {(uint8_t)(speed>>8),(uint8_t)(speed&0xFF),(uint8_t)(encPosition>>8),(uint8_t)(encPosition&0xFF),(uint8_t)stoptorque};
    i2cSendData(COMMAND_MOV_POS,sizeof(buffer),buffer);
 }
 
 void Omni3MD::mov_lin3m_pid(int speed1,int speed2,int speed3)
 {
+   gettimeofday(&t0,0);
    uint8_t buffer[] = {(uint8_t)(speed1>>8),(uint8_t)(speed1&0xFF),(uint8_t)(speed2>>8),(uint8_t)(speed2&0xFF),(uint8_t)(speed3>>8),(uint8_t)(speed3&0xFF)};
    i2cSendData(COMMAND_MOV_LIN3M_PID,sizeof(buffer),buffer);
 }
@@ -228,12 +249,14 @@ void Omni3MD::mov_lin1m_pid(uint8_t motor,int speed)
 
 void Omni3MD::mov_lin3m_nopid(int speed1,int speed2,int speed3)
 {
+   gettimeofday(&t0,0);
    uint8_t buffer[] = {(uint8_t)(speed1>>8),(uint8_t)(speed1&0xFF),(uint8_t)(speed2>>8),(uint8_t)(speed2&0xFF),(uint8_t)(speed3>>8),(uint8_t)(speed3&0xFF)};
    i2cSendData(COMMAND_MOV_LIN3M_NOPID,sizeof(buffer),buffer);
 }
 
 void Omni3MD::mov_lin1m_nopid(uint8_t motor,int speed)
 {
+   gettimeofday(&t0,0);
    uint8_t buffer[] = {motor,(uint8_t)(speed>>8),(uint8_t)(speed&0xFF)};
    i2cSendData(COMMAND_MOV_LIN1M_NOPID,sizeof(buffer),buffer);
 }

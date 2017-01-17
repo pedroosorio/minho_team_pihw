@@ -12,6 +12,10 @@
 #ifndef Omni3MD_h
 #define Omni3MD_h
 
+#ifndef rttimer_h
+#include "rttimer.h"
+#endif
+
 #include "omni3md_defines.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -24,6 +28,7 @@
 #include <sys/types.h>
 #include <iostream>
 
+
 class Omni3MD
 {
    public:
@@ -31,7 +36,9 @@ class Omni3MD
    /// file descriptor, it should match device's address. Also
    /// performs the connection to the device.
    /// \param omniAddress - Omni3MD I2C 7bit address (default is 0x18)
-   Omni3MD(uint8_t omniAddress);
+   /// \param i2c_bus_mutex - pointer to i2c_bus_mutex used if more
+   /// than one device is using i2c bus
+   Omni3MD(uint8_t omniAddress, pthread_mutex_t *i2c_bus_mutex = NULL);
 
    /* Setup Routines */
    /*************************************************************/
@@ -267,6 +274,17 @@ class Omni3MD
    std::string device_name;
    /// \brief defined I2C address for Omni3MD
    uint8_t i2c_slave_address;
+   /// \brief mutex for I2C bus
+   pthread_mutex_t *i2c_mutex;
+   /// \brief timestamps to implement safety timeout
+   struct timeval t1,t0;
+   /// \brief thread to run watchdog timer
+   pthread_t watchdog_thread;
+   /// \brief periodic_info to time watchdog function
+   periodic_info watchdog_pi;
+   /// \brief boolean to detect if timeout is enabled
+   bool timeout_active;
+   
 
    /// \brief function to use I2C bus to read a byte from the
    /// specified register. 
@@ -295,6 +313,64 @@ class Omni3MD
    /// \param values - pointer to vector of bytes where data is stored
    /// \return - returns -1 on failure. returns length on success
    int i2cSendData(uint8_t command, uint8_t length, uint8_t* values);
+
+   /// \brief watchdog function thread that detects lack of
+   /// movement commands and stops motors when timeout expires
+   static inline void *watchdog_timer(void *omni3md)
+   {
+      Omni3MD *omni = (Omni3MD *)omni3md;
+      periodic_info *info = omni->getWatchdogTimer();
+      make_periodic(info->period_us,info);
+      struct timeval *t0,*t1;
+      omni->getTimeVals(t0,t1);
+      pthread_mutex_t *i2c_mutex;
+      omni->getI2Cmutex(i2c_mutex);
+      
+      while(omni->getTimeoutActive()){
+         printf("Timeout reached\n");
+
+
+         /*
+            // Watchdog timer for Omni3MD
+      gettimeofday(&t1,0);
+      float elapsed = (float)(t1.tv_sec-t0.tv_sec)*1000.0 + (float)(t1.tv_usec-t0.tv_usec)/1000.0;
+      //80ms timeout
+      if(elapsed>80) {
+         pthread_mutex_lock(&i2c_mutex);
+         omni.stop_motors();
+         pthread_mutex_unlock(&i2c_mutex);
+      }
+      t0 = t1;
+         */
+         wait_period(info);   
+      }
+      
+      return NULL;
+   }
+   
+   /// \brief function to return watchdog periodic_info struct
+   /// \return - periodic_info struct
+   inline periodic_info *getWatchdogTimer() { return &watchdog_pi; };
+   
+   /// \brief function to return watchdog periodic_info struct
+   /// \return - periodic_info struct
+   inline bool getTimeoutActive() { return timeout_active; };
+
+   /// \brief function to return watchdog timevals
+   /// \param ta - timeval t0
+   /// \param tb - timeval t1
+   inline void getTimeVals(struct timeval *ta, struct timeval *tb) 
+   { 
+      ta = &t0; tb = &t1;
+   };
+
+   /// \brief function to return i2c_mutex to be used in watchdog
+   /// thread
+   /// \param mutex - i2c_mutex
+   inline void getI2Cmutex(pthread_mutex_t *mutex) 
+   { 
+      mutex = i2c_mutex;
+   };
 };
 
 #endif

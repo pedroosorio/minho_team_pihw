@@ -51,9 +51,6 @@ pthread_mutex_t hw_mutex = PTHREAD_MUTEX_INITIALIZER;
 /// \brief mutex to protect access to i2c bus
 pthread_mutex_t i2c_mutex = PTHREAD_MUTEX_INITIALIZER;
 
-/// \brief timestamps to implement safety timeout
-struct timeval t1,t0;
-
 /// \brief publisher of hardwareInfo
 ros::Publisher hw_pub;
 
@@ -66,7 +63,7 @@ ros::Subscriber teleop_sub;
 
 /// \brief Omni3MD object to communicate through I2C bus
 /// with omni motor controller
-Omni3MD omni(0x18);
+Omni3MD omni(0x18,&i2c_mutex);
 
 /// \brief MCP3008 object to communicate through SPI bus
 /// with 8-channel 10bit ADC
@@ -118,8 +115,6 @@ int main(int argc, char**argv)
    hw_pub = pihw_node.advertise<hardwareInfo>("/hardwareInfo",1);
    control_sub = pihw_node.subscribe("/controlInfo",1,controlInfoCallback);
    teleop_sub = pihw_node.subscribe("/teleop",1,teleopCallback);
-   gettimeofday(&t1,0);
-   t0 = t1;
 
    // Start node
    ROS_WARN("MinhoTeam pihw_node started running on ROS.");
@@ -224,17 +219,6 @@ void *readBatteries(void *per_info)
       if(hw.battery_main>2.5 && hw.battery_main<MAIN_CRIT_VOLT) throw_alarm(MAIN);
       pthread_mutex_unlock(&hw_mutex);
 
-      // Watchdog timer for Omni3MD
-      gettimeofday(&t1,0);
-      float elapsed = (float)(t1.tv_sec-t0.tv_sec)*1000.0 + (float)(t1.tv_usec-t0.tv_usec)/1000.0;
-      //80ms timeout
-      if(elapsed>80) {
-         pthread_mutex_lock(&i2c_mutex);
-         omni.stop_motors();
-         pthread_mutex_unlock(&i2c_mutex);
-      }
-      t0 = t1;
- 
       //Grabber readings will go here
 
       wait_period(info);
@@ -253,8 +237,7 @@ void controlInfoCallback(const controlInfo::ConstPtr &msg)
       else omni.stop_motors();
       pthread_mutex_unlock(&hw_mutex);
       pthread_mutex_unlock(&i2c_mutex);
-      
-      gettimeofday(&t0,0);
+
       //Grabber actuaction will go here 
    }     
 }

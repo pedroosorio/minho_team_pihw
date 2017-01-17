@@ -1,6 +1,9 @@
 /* This header defines methods for creating a timed thread
 */
 
+#ifndef rttimer_h
+#define rttimer_h
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
@@ -72,3 +75,5 @@ static inline void wait_period (periodic_info *info)
 	if (missed > 0)
 		info->wakeups_missed += (missed - 1);
 }
+
+#endif
