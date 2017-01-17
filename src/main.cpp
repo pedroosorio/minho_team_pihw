@@ -4,6 +4,7 @@
 #include "Omni3MD.h"
 #include "ros/ros.h"
 #include "hwdefines.h"
+#include "utils.h"
 
 // ##### ROS MSG INCLUDES #####
 // ############################
@@ -99,7 +100,7 @@ void throw_alarm(BAT_ALARM type);
 int main(int argc, char**argv)
 {
    ROS_WARN("Attempting to start PiHw services of pihw_node.");
-   std::string iface_ip = getInterfaceIp();
+   std::string iface_ip = getInterfaceIp("eth0");
    ROS_WARN("Current interface ip: %s",iface_ip.c_str());  
    std::size_t found = iface_ip.find_last_of(".");
    std::string master_ip = "http://";
@@ -162,7 +163,7 @@ void *readEncoders(void *per_info)
       pthread_mutex_lock(&hw_mutex);
       //read battery
       pthread_mutex_lock(&i2c_mutex);
-      hw.battery_main = omni.read_battery();
+      hw.battery_main = omni.read_battery()+MAIN_OFF_VOLT;
       pthread_mutex_unlock(&i2c_mutex);
       //publish info
       hw_pub.publish(hw);
@@ -189,14 +190,16 @@ void *readBatteries(void *per_info)
    while(ros::ok()){
       pthread_mutex_lock(&hw_mutex);     
       //read channel 1 (pc_bat)
-      hw.battery_pc = adc.readChannel(0,PC_MAX_VOLTAGE);
-      if(hw.battery_pc>2.5 && hw.battery_pc<PC_CRITICAL_VOLTAGE) throw_alarm(PC);
+      hw.battery_pc = adc.readChannel(0,PC_REF_VOLT);
+      if(hw.battery_pc>2.5 && hw.battery_pc<PC_CRIT_VOLT) throw_alarm(PC);
+      else hw.battery_pc += PC_OFF_VOLT;
       pthread_mutex_unlock(&hw_mutex);
 
       pthread_mutex_lock(&hw_mutex);
       //read channel 1 (pc_bat)
-      hw.battery_camera = adc.readChannel(1,CAM_MAX_VOLTAGE);
-      if(hw.battery_camera>2.5 && hw.battery_camera<CAM_CRITICAL_VOLTAGE) throw_alarm(CAM);
+      hw.battery_camera = adc.readChannel(1,CAM_REF_VOLT);
+      if(hw.battery_camera>2.5 && hw.battery_camera<CAM_CRIT_VOLT) throw_alarm(CAM);
+      else hw.battery_camera += CAM_OFF_VOLT;
       pthread_mutex_unlock(&hw_mutex);
 
       pthread_mutex_lock(&hw_mutex);
@@ -205,23 +208,21 @@ void *readBatteries(void *per_info)
       if(freewheel>2.5) hw.free_wheel_activated = true;
       else hw.free_wheel_activated = false;
 
-      if(hw.battery_main>2.5 && hw.battery_main<MAIN_CRITICAL_VOLTAGE) throw_alarm(MAIN);
+      if(hw.battery_main>2.5 && hw.battery_main<MAIN_CRIT_VOLT) throw_alarm(MAIN);
       pthread_mutex_unlock(&hw_mutex);
- 
-      //Grabber readings will go here
 
-      // Watch dog for timeout
+      // Watchdog timer for Omni3MD
       gettimeofday(&t1,0);
       float elapsed = (float)(t1.tv_sec-t0.tv_sec)*1000.0 + (float)(t1.tv_usec-t0.tv_usec)/1000.0;
-      //100ms timeout
+      //80ms timeout
       if(elapsed>80) {
-         pthread_mutex_lock(&hw_mutex);
          pthread_mutex_lock(&i2c_mutex);
-         //omni.stop_motors();
+         omni.stop_motors();
          pthread_mutex_unlock(&i2c_mutex);
-         pthread_mutex_unlock(&hw_mutex);
       }
       t0 = t1;
+ 
+      //Grabber readings will go here
 
       wait_period(info);
    }
@@ -247,13 +248,7 @@ void controlInfoCallback(const controlInfo::ConstPtr &msg)
 
 void teleopCallback(const teleop::ConstPtr &msg)
 {
-   //teleop_active = msg->set_teleop;  
-   pthread_mutex_lock(&i2c_mutex);
-   //omni.calibrate(1,1,1); 
-   omni.save_position();
-   //omni.set_enc_value(1,200);
-   ROS_INFO("HERE");
-   pthread_mutex_unlock(&i2c_mutex);
+   teleop_active = msg->set_teleop; 
 }
 
 void throw_alarm(BAT_ALARM type)

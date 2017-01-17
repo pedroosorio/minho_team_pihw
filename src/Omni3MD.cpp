@@ -2,8 +2,11 @@
    Omni3MD.h - Library for interfacing with omni-3md (3 motor driver controller) from www.botnroll.com
    Created by Nino Pereira, April 28, 2011.
    Last Update by José Cruz, July 23, 2013.
-   Ported to RaspberryPi 3 by Pedro Osório, January, 2017.
+   Ported to RaspberryPi 3's Raspbian by Pedro Osório, January, 2017.
    Released into the public domain.
+
+   For more detailed explanation please refer to 
+   http://botnroll.com/omni3md/ for the software and hardware manual.
 */
 
 #include "Omni3MD.h"
@@ -88,8 +91,7 @@ void Omni3MD::set_ramp(int time, int slope, int Kl)
 void Omni3MD::set_enc_value(uint8_t encoder, int encValue)
 {
    uint8_t buffer[] = {encoder,(uint8_t)(encValue>>8),(uint8_t)(encValue&0xFF),KEY1,KEY2};
-   printf("RET: %d",i2cSendData(COMMAND_POS_ENC_PRESET,5,buffer));
-     
+   i2cSendData(COMMAND_POS_ENC_PRESET,sizeof(buffer),buffer);   
 }
 
 void Omni3MD::set_prescaler(uint8_t encoder, uint8_t value)
@@ -118,9 +120,7 @@ float Omni3MD::read_temperature()
 
 float Omni3MD::read_battery()
 {
-   int temp = i2cRequestWord(COMMAND_BAT);
-   printf("%x\n",temp);
-   return (float)(temp)/10.0;
+   return i2cRequestWord(COMMAND_BAT)/10.0;
 }
 
 float Omni3MD::read_firmware()
@@ -177,16 +177,16 @@ void Omni3MD::read_encoders(int* enc1,int* enc2,int* enc3)
 {
    uint8_t values[6] = {0,0,0,0,0,0};
    i2cRequestData(COMMAND_ENC1_INC,6,values);
-   *enc1 = ((int)values[0]<<8)|values[1];
-   *enc2 = ((int)values[2]<<8)|values[3];
-   *enc3 = ((int)values[4]<<8)|values[5]; 
+   *enc1 = ((int)values[0]<<8)|(int)values[1];
+   *enc2 = ((int)values[2]<<8)|(int)values[3];
+   *enc3 = ((int)values[4]<<8)|(int)values[5]; 
 }
 
-void Omni3MD::read_mov_data(int*,int*,int*,float*,float*)
+void Omni3MD::read_mov_data(int* enc1,int* enc2,int* enc3,float* bat,float* temp)
 {
 }
 
-void Omni3MD::read_all_data(int*,int*,int*,float*,float*,uint8_t*,uint8_t*,uint8_t*,uint8_t*,int*,int*,int*)
+void Omni3MD::read_all_data(int* enc1,int* enc2,int* enc3,float* bat,float* temp,uint8_t* firm_int,uint8_t* frim_rel,uint8_t* firm_dev,uint8_t* ctrl_rate,int* enc1max,int* enc2max,int* enc3max)
 {
 }
 /*************************************************************/
@@ -247,8 +247,7 @@ void Omni3MD::stop_motors()
 void Omni3MD::save_position()
 {
    uint8_t buffer[]={KEY1,KEY2};
-   i2c_smbus_write_word_data(i2c_fd,COMMAND_SAVE_POS,(((uint16_t)KEY1<<8)|(uint16_t)KEY2&0x00FF));
-   //i2cSendData(COMMAND_SAVE_POS,sizeof(buffer),buffer);
+   i2cSendData(COMMAND_SAVE_POS,sizeof(buffer),buffer);
 }
 /*************************************************************/
 
@@ -279,5 +278,5 @@ int Omni3MD::i2cRequestData(uint8_t command, uint8_t length, uint8_t* values)
 int Omni3MD::i2cSendData(uint8_t command, uint8_t length, uint8_t* values)
 {
    i2c_start_transmission();
-   return i2c_smbus_write_block_data(i2c_fd,command,length,values);
+   return i2c_smbus_write_i2c_block_data(i2c_fd,command,length,values);
 }

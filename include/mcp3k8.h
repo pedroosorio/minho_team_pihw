@@ -1,4 +1,4 @@
-/* This librarie interfaces SPI 4-CHannel ADC MCP3008 using wiringPi's SPI */
+/* This librarie interfaces SPI 4-CHannel ADC MCP3008 using i2c-dev */
 #include <unistd.h>
 #include <stdint.h>
 #include <fcntl.h>
@@ -19,10 +19,10 @@ typedef unsigned int uint;
 typedef unsigned char uchar;
 
 typedef enum SPI_DEV {SPI_DEV_0=0,SPI_DEV_1} SPI_DEV;
-/* Configuration defines */
 
+/* Configuration defines */
 #define N_CHANNELS 8 //Number of channels of MCP3008
-#define MISSING_INIT "error: init_mcp3k8() should be called before any other operation.\n"
+#define MISSING_INIT "_MCP3008: openMCP3k8() should be called before any other operation.\n"
 
 class MCP3k8{
    public:
@@ -32,11 +32,11 @@ class MCP3k8{
    /// \param fclk - SPI Clock speed in Hertz 
    /// \param mode - SPI Mode (0,1,2,3) depending on clock phase and polarity
    /// \param bytesWord - number of bits per word
-   /// \param vref - conversion reference voltage
+   /// \param vref - default conversion reference voltage
    MCP3k8(SPI_DEV channel, uint fclk, uchar mode, uchar bitsWord, float vref);
 
    /// \brief opens SPI interface
-   /// \return - <0 for error on closing.
+   /// \return - <0 for error on opening.
    int openMCP3k8();
 
    /// \brief closes SPI interface

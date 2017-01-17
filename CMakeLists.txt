@@ -16,7 +16,7 @@ catkin_package(
 
 set(PDIR ${minho_team_pihw_SOURCE_DIR})
 message(STATUS "Current directory: " ${PDIR})
-find_package(wiringPi REQUIRED)
+#find_package(wiringPi REQUIRED)
 find_package(Threads REQUIRED)
 include_directories(${PDIR}/include ${WIRINPI_INCLUDE_DIRECTORIES})
 set(SDIR ${PDIR}/src)
@@ -48,6 +48,6 @@ message(STATUS "Source directory: " ${SDIR})
 include_directories(${catkin_INCLUDE_DIRS})
 include_directories(~/catkin_ws/devel/include)
 add_executable(main ${SRC})
-target_link_libraries(main wiringPi ${catkin_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT} mcp3k8 Omni3MD)
+target_link_libraries(main ${catkin_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT} mcp3k8 Omni3MD)
 add_dependencies(main Omni3MD mcp3k8 minho_team_ros_gencpp)
 ##

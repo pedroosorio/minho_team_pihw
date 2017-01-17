@@ -1,8 +1,11 @@
-#define KEY1 0xAA // key used in critical commands
-#define KEY2 0x55 // key used in critical commands
+/* This header the I2C commands to be sent to Omni3MD
+*/
 
 #include <stdint.h>
 #include <linux/i2c-dev.h>
+
+#define KEY1 0xAA // key used in critical commands
+#define KEY2 0x55 // key used in critical commands
 
 /*Read Firmware version*/
 /*********************************************************/
@@ -46,4 +49,4 @@
 #define COMMAND_ENC3_MAX 0xD0 //Read encoder1 maximum value at calibration
 /*********************************************************/
 
-#define DEFAULT_OMNI_ADDRESS 0x30
+#define DEFAULT_OMNI_ADDRESS 0x18 // Default 7bit address

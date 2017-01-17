@@ -21,7 +21,7 @@ MCP3k8::MCP3k8(SPI_DEV channel, uint fclk, uchar mode, uchar bitsWord, float vre
    //Assignings and SPI interface initialization
    if(channel==SPI_DEV_0){strcat(spi_dev_name,"0\0");}
    else if(channel==SPI_DEV_1){strcat(spi_dev_name,"1\0");}
-   else {perror("Invalid SPI Channel"); return;} 
+   else {perror("_MCP3008: Invalid SPI Channel"); return;} 
    printf("_MCP3008: Opening MCP3008 in %s\n",spi_dev_name);
    
    spi_channel = channel;
