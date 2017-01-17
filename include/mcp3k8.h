@@ -45,7 +45,8 @@ class MCP3k8{
 
    // \brief function that reads a channel
    /// \param channel - number of the channel to be read
-   float readChannel(char channel);
+   /// \param vref - voltage reference to be applied in calculation
+   float readChannel(char channel, float vref);
 
    /// \brief function that reads all channels and
    /// stores the values in channels

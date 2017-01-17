@@ -6,6 +6,16 @@
 #include <unistd.h>
 #include <sys/time.h>
 #include <sys/timerfd.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <arpa/inet.h>
+#include <signal.h>
+#include <errno.h>
+#include <sys/ioctl.h>
+#include <linux/if.h>
+#include <unistd.h>
+#include <linux/if_ether.h>
+#include <sstream>
 
 typedef struct periodic_info
 {
@@ -50,8 +60,7 @@ static inline void wait_period (periodic_info *info)
 	/* Wait for the next timer event. If we have missed any the
 	   number is written to "missed" */
 	ret = read (info->timer_fd, &missed, sizeof (missed));
-	if (ret == -1)
-	{
+	if (ret == -1){
 		perror ("read timer");
 		return;
 	}
@@ -59,4 +68,37 @@ static inline void wait_period (periodic_info *info)
 	/* "missed" should always be >= 1, but just to be sure, check it is not 0 anyway */
 	if (missed > 0)
 		info->wakeups_missed += (missed - 1);
+}
+
+static inline std::string getInterfaceIp()
+{
+   int   fd;
+   struct ifreq if_info;
+   int if_index;
+   std::string ifname = "eth0";
+   memset(&if_info, 0, sizeof(if_info));
+   strncpy(if_info.ifr_name, ifname.c_str(), IFNAMSIZ-1);
+
+   if ((fd=socket(AF_INET, SOCK_DGRAM, 0)) == -1)
+   {
+      return "10.42.0.64";
+   }
+   if (ioctl(fd, SIOCGIFINDEX, &if_info) == -1)
+   {
+      close(fd);
+      return "10.42.0.64";
+   }
+   if_index = if_info.ifr_ifindex;
+
+   if (ioctl(fd, SIOCGIFADDR, &if_info) == -1)
+   {
+      close(fd);
+      return "10.42.0.64";
+   }
+   
+   close(fd);
+   std::stringstream ip; 
+   ip << (int) ((unsigned char *) if_info.ifr_hwaddr.sa_data)[2] << "." << (int) ((unsigned char *) if_info.ifr_hwaddr.sa_data)[3] << "." << (int) ((unsigned char *) if_info.ifr_hwaddr.sa_data)[4] << "." << (int) ((unsigned char *) if_info.ifr_hwaddr.sa_data)[5]; 
+   
+   return ip.str();
 }

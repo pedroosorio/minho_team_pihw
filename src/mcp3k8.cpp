@@ -95,7 +95,7 @@ int MCP3k8::closeMCP3k8()
    return ret; 
 }
 
-float MCP3k8::readChannel(char channel)
+float MCP3k8::readChannel(char channel, float vref)
 {
    if(!init) { perror(MISSING_INIT); return -1.0; }  
    if(channel<0 || channel>=N_CHANNELS) return -1.0;
@@ -107,7 +107,7 @@ float MCP3k8::readChannel(char channel)
          int adc_val = 0;
          adc_val = (data[1]<<8)&0b1100000000;
          adc_val |= (data[2]&0xff);
-         return ((float)adc_val*voltage_reference)/1023.0;
+         return ((float)adc_val*vref)/1023.0;
       } else perror("_MCP3008: Error reading channel.");
       
       return -1.0;     
@@ -118,7 +118,7 @@ void MCP3k8::readAll(float *vec)
 {
    if(!init) { perror(MISSING_INIT); return; }
    for(uint i=0;i<N_CHANNELS;i++){
-      channels[i] = readChannel(i);
+      channels[i] = readChannel(i,voltage_reference);
    }
    memcpy(channels,vec,sizeof(channels));
 }

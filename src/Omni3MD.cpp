@@ -88,7 +88,8 @@ void Omni3MD::set_ramp(int time, int slope, int Kl)
 void Omni3MD::set_enc_value(uint8_t encoder, int encValue)
 {
    uint8_t buffer[] = {encoder,(uint8_t)(encValue>>8),(uint8_t)(encValue&0xFF),KEY1,KEY2};
-   i2cSendData(COMMAND_POS_ENC_PRESET,sizeof(buffer),buffer);
+   printf("RET: %d",i2cSendData(COMMAND_POS_ENC_PRESET,5,buffer));
+     
 }
 
 void Omni3MD::set_prescaler(uint8_t encoder, uint8_t value)
@@ -117,7 +118,9 @@ float Omni3MD::read_temperature()
 
 float Omni3MD::read_battery()
 {
-   return (float)(i2cRequestWord(COMMAND_BAT))/10.0;
+   int temp = i2cRequestWord(COMMAND_BAT);
+   printf("%x\n",temp);
+   return (float)(temp)/10.0;
 }
 
 float Omni3MD::read_firmware()
@@ -244,26 +247,31 @@ void Omni3MD::stop_motors()
 void Omni3MD::save_position()
 {
    uint8_t buffer[]={KEY1,KEY2};
-   i2cSendData(COMMAND_SAVE_POS,sizeof(buffer),buffer);
+   i2c_smbus_write_word_data(i2c_fd,COMMAND_SAVE_POS,(((uint16_t)KEY1<<8)|(uint16_t)KEY2&0x00FF));
+   //i2cSendData(COMMAND_SAVE_POS,sizeof(buffer),buffer);
 }
 /*************************************************************/
 
 int Omni3MD::i2cRequestByte(uint8_t command)
 {
    i2c_start_transmission();
-   return i2c_smbus_read_byte_data(i2c_fd,command);  
+   __u8 byte[1];
+   if(i2c_smbus_read_i2c_block_data(i2c_fd,command,1,byte)!=1) return -1;
+   return (int)byte[0];
 }
 
 int Omni3MD::i2cRequestWord(uint8_t command)
 {
-  i2c_start_transmission();
-  return i2c_smbus_read_word_data(i2c_fd,command);   
+   i2c_start_transmission();
+   __u8 bytes[2];
+   if(i2c_smbus_read_i2c_block_data(i2c_fd,command,2,bytes)!=2) return -1;
+   return ((int)bytes[0]<<8|(int)(bytes[1]&0xFF));  
 }
 
 int Omni3MD::i2cRequestData(uint8_t command, uint8_t length, uint8_t* values)
 {
    i2c_start_transmission();
-   int bytes = i2c_smbus_read_block_data(i2c_fd,command,values);
+   int bytes = i2c_smbus_read_i2c_block_data(i2c_fd,command,length,values);
    if(bytes!=length) return -1;
    else return bytes;
 }
