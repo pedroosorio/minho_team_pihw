@@ -1,0 +1,15 @@
+# Libs
+
+sudo apt-get install cmake build-essential
+sudo apt-get install libi2c-dev (for i2c bus communication)
+
+# Install ROS in RPI
+
+http://wiki.ros.org/ROSberryPi/Installing%20ROS%20Kinetic%20on%20the%20Raspberry%20Pi 
+// Follow this to the character ! If it hangs during ros compilation (near package 41) hit Ctrl+C and re-compile with -j2.
+
+
+# Configs
+
+Go to raspi-config and enable SSH, SPI and I2C.
+

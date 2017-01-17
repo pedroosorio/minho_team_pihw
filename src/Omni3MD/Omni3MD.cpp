@@ -9,7 +9,7 @@
    http://botnroll.com/omni3md/ for the software and hardware manual.
 */
 
-#include "Omni3MD.h"
+#include "Omni3MD/Omni3MD.h"
 
 Omni3MD::Omni3MD(uint8_t omniAddress)
 {

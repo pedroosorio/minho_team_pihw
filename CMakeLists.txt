@@ -25,7 +25,7 @@ set(MLIB_DIR ${PDIR}/libs)
 link_directories(${MLIB_DIR})
 
 ## Compile mcp3k8 as a shared library
-add_library(mcp3k8 SHARED ${SDIR}/mcp3k8.cpp)
+add_library(mcp3k8 SHARED ${SDIR}/MCP3k8/mcp3k8.cpp)
 set_target_properties( mcp3k8
     PROPERTIES
     LIBRARY_OUTPUT_DIRECTORY ${MLIB_DIR}
@@ -34,12 +34,21 @@ target_compile_features(mcp3k8 PRIVATE cxx_range_for)
 ##
 
 ## Compile Omni3MD as a shared library
-add_library(Omni3MD SHARED ${SDIR}/Omni3MD.cpp)
+add_library(Omni3MD SHARED ${SDIR}/Omni3MD/Omni3MD.cpp)
 set_target_properties( Omni3MD
     PROPERTIES
     LIBRARY_OUTPUT_DIRECTORY ${MLIB_DIR}
 )
 target_compile_features(Omni3MD PRIVATE cxx_range_for)
+##
+
+## Compile Ada10Dof as a shared library
+add_library(Ada10Dof SHARED ${SDIR}/Ada10Dof/Ada10Dof.cpp)
+set_target_properties( Ada10Dof
+    PROPERTIES
+    LIBRARY_OUTPUT_DIRECTORY ${MLIB_DIR}
+)
+target_compile_features(Ada10Dof PRIVATE cxx_range_for)
 ##
 
 ## Compile program

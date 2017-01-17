@@ -1,7 +1,8 @@
 #include <iostream>
 #include "rttimer.h"
-#include "mcp3k8.h"
-#include "Omni3MD.h"
+#include "MCP3k8/mcp3k8.h"
+#include "Omni3MD/Omni3MD.h"
+#include "Ada10Dof/Ada10Dof.h"
 #include "ros/ros.h"
 #include "hwdefines.h"
 #include "utils.h"
@@ -182,6 +183,14 @@ void *readIMU(void *per_info)
    make_periodic(info->period_us,info);
 
    while(1){
+
+      pthread_mutex_lock(&hw_mutex); 
+      pthread_mutex_lock(&i2c_mutex);
+      // Put this code around any call to i2c bus   
+      // and following access to hw message   
+      pthread_mutex_unlock(&hw_mutex);
+      pthread_mutex_unlock(&i2c_mutex);
+
       wait_period(info);
    }
 }

@@ -1,5 +1,5 @@
 /* This librarie interfaces SPI 4-CHannel ADC MCP3008 using wiringPi's SPI */
-#include "mcp3k8.h"
+#include "MCP3k8/mcp3k8.h"
 
 
 MCP3k8::MCP3k8(SPI_DEV channel, uint fclk, uchar mode, uchar bitsWord, float vref)
