@@ -98,6 +98,7 @@ void throw_alarm(BAT_ALARM type);
 int main(int argc, char**argv)
 {
    ROS_WARN("Attempting to start PiHw services of pihw_node.");
+   
    std::string iface_ip = getInterfaceIp("eth0");
    ROS_WARN("Current interface ip: %s",iface_ip.c_str());  
    std::size_t found = iface_ip.find_last_of(".");
@@ -106,7 +107,7 @@ int main(int argc, char**argv)
    master_ip += ".1:11311";
    ROS_INFO("Setting ROS_MASTER_URI as %s", master_ip.c_str());
    setenv("ROS_MASTER_URI",master_ip.c_str(),1);
-
+   
    ros::init(argc, argv, "pihw_node" ,ros::init_options::NoSigintHandler);
    setup_threads();   
    ros::NodeHandle pihw_node;
@@ -142,6 +143,8 @@ void setup_threads()
    uint8_t f1,f2,f3;
    omni.read_firmware(&f1,&f2,&f3);
    ROS_INFO("Omni3MD: \n\t\t\t\tCtrl Rate %d | Firmware v%d.%d.%d |\n\t\t\t\tTemperature %.2f | Encoder Max %d |\n\t\t\t\tBattery %.2f |", omni.read_control_rate(), f1,f2,f3, omni.read_temperature(), omni.read_enc1_max(),omni.read_battery());  
+   
+   omni.set_i2c_timeout(10);
 }
 
 void *readEncoders(void *per_info)
@@ -230,7 +233,6 @@ void controlInfoCallback(const controlInfo::ConstPtr &msg)
    if((teleop_active && msg->is_teleop)||(!teleop_active && !msg->is_teleop)){
 
       int movement_dir = 360-msg->movement_direction; 
-      return; 
       pthread_mutex_lock(&hw_mutex); 
       pthread_mutex_lock(&i2c_mutex);
       if(!hw.free_wheel_activated) omni.mov_omni(msg->linear_velocity, msg->angular_velocity, movement_dir);

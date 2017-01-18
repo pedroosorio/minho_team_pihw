@@ -322,26 +322,19 @@ class Omni3MD
       periodic_info *info = omni->getWatchdogTimer();
       make_periodic(info->period_us,info);
       struct timeval *t0,*t1;
-      omni->getTimeVals(t0,t1);
+      omni->getTimeVals(&t0,&t1);
       pthread_mutex_t *i2c_mutex;
-      omni->getI2Cmutex(i2c_mutex);
-      
+      omni->getI2Cmutex(&i2c_mutex);
+      int timeoutms = info->period_us/1000;
+
       while(omni->getTimeoutActive()){
-         printf("Timeout reached\n");
-
-
-         /*
-            // Watchdog timer for Omni3MD
-      gettimeofday(&t1,0);
-      float elapsed = (float)(t1.tv_sec-t0.tv_sec)*1000.0 + (float)(t1.tv_usec-t0.tv_usec)/1000.0;
-      //80ms timeout
-      if(elapsed>80) {
-         pthread_mutex_lock(&i2c_mutex);
-         omni.stop_motors();
-         pthread_mutex_unlock(&i2c_mutex);
-      }
-      t0 = t1;
-         */
+         gettimeofday(t1,0);
+         if(((float)(t1->tv_sec-t0->tv_sec)*1000.0 + (float)(t1->tv_usec-t0->tv_usec)/1000.0)>=timeoutms){
+            pthread_mutex_lock(i2c_mutex);
+            omni->stop_motors();
+            pthread_mutex_unlock(i2c_mutex);
+         }
+         
          wait_period(info);   
       }
       
@@ -359,17 +352,17 @@ class Omni3MD
    /// \brief function to return watchdog timevals
    /// \param ta - timeval t0
    /// \param tb - timeval t1
-   inline void getTimeVals(struct timeval *ta, struct timeval *tb) 
+   inline void getTimeVals(struct timeval **ta, struct timeval **tb)
    { 
-      ta = &t0; tb = &t1;
+      (*ta)=&t0; (*tb)=(&t1);
    };
 
    /// \brief function to return i2c_mutex to be used in watchdog
    /// thread
    /// \param mutex - i2c_mutex
-   inline void getI2Cmutex(pthread_mutex_t *mutex) 
-   { 
-      mutex = i2c_mutex;
+   inline void getI2Cmutex(pthread_mutex_t **mutex) 
+   {
+      (*mutex) = i2c_mutex;
    };
 };
 
