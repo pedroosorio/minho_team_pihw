@@ -6,6 +6,7 @@
 #include "ros/ros.h"
 #include "hwdefines.h"
 #include "utils.h"
+#include <unistd.h>
 
 // ##### ROS MSG INCLUDES #####
 // ############################
@@ -156,10 +157,15 @@ void *readEncoders(void *per_info)
       pthread_mutex_lock(&hw_mutex);
       //read encoders
       pthread_mutex_lock(&i2c_mutex);
-//      omni.read_encoders((int*)&hw.encoder_1,(int*)&hw.encoder_2,(int*)&hw.encoder_3);
+//      omni.read_encoders(&hw.encoder_1,&hw.encoder_2,&hw.encoder_3);
       hw.encoder_1 = omni.read_enc1();
       hw.encoder_2 = omni.read_enc2();
       hw.encoder_3 = omni.read_enc3();
+  
+//      int16_t a,b,c; float d,e;
+//      omni.read_mov_data(&a,&b,&c,&d,&e);
+//      printf("%d %d %d %.2f %.2f\n",a,b,c,d,e);
+
       pthread_mutex_unlock(&i2c_mutex);
       pthread_mutex_unlock(&hw_mutex);
 
@@ -247,6 +253,12 @@ void controlInfoCallback(const controlInfo::ConstPtr &msg)
 void teleopCallback(const teleop::ConstPtr &msg)
 {
    teleop_active = msg->set_teleop;
+   omni.set_enc_value(1,15);
+   usleep(20000);
+   omni.set_enc_value(2,-345);
+   usleep(20000);
+   omni.set_enc_value(3,345);
+   usleep(20000);
 }
 
 void throw_alarm(BAT_ALARM type)

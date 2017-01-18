@@ -167,7 +167,7 @@ class Omni3MD
    /// \param enc1 - pointer to encoder 1 value
    /// \param enc2 - pointer to encoder 2 value
    /// \param enc3 - pointer to encoder 3 value
-   void read_encoders(int* enc1,int* enc2,int* enc3);
+   void read_encoders(int16_t* enc1,int16_t* enc2,int16_t* enc3);
 
    /// \brief function to read all Omni3MD's encoders, battery and
    /// temperature.
@@ -176,7 +176,7 @@ class Omni3MD
    /// \param enc3 - pointer to encoder 3 value
    /// \param bat - pointer to battery value
    /// \param temp - pointer to temperature value
-   void read_mov_data(int* enc1,int* enc2,int* enc3,float* bat,float* temp);
+   void read_mov_data(int16_t* enc1,int16_t* enc2,int16_t* enc3,float* bat,float* temp);
 
    /// \brief function to read encoders, battery, temperature, firmware
    /// and encoders' maximum value.
