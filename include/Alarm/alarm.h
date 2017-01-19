@@ -12,11 +12,11 @@ typedef enum ALARM{MAIN=0,PC,CAM,TELE_ON,TELE_OFF,FW_ON,FW_OFF} ALARM;
 #include <time.h>
 #include <stdio.h>
 
-extern pthread_mutex_t *mutex;
+extern pthread_mutex_t mutex;
 
 /// \brief function that sets up pin and wiringPi's interface for
 /// alarm buzzer
-void setup_alarm(pthread_mutex_t *mt);
+void setup_alarm();
 
 /// \brief instanciates a thread to play an alarm
 /// in the Buzzer

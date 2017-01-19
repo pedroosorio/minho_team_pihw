@@ -53,8 +53,6 @@ bool teleop_active = false;
 pthread_mutex_t hw_mutex = PTHREAD_MUTEX_INITIALIZER;
 /// \brief mutex to protect access to i2c bus
 pthread_mutex_t i2c_mutex = PTHREAD_MUTEX_INITIALIZER;
-/// \brief mutex to protect access to buzzer
-pthread_mutex_t alarm_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 /// \brief publisher of hardwareInfo
 ros::Publisher hw_pub;
@@ -99,6 +97,12 @@ void *readIMU(void *per_info);
 /// batteries and will be used to read future things
 /// \param per_info - pointer to periodic_info to use 
 void *readBatteries(void *per_info);
+/// \brief instanciates a thread to play an alarm
+/// in the Buzzer
+/// \param type - type of alarm to be thrown
+void play_alarm(ALARM type);
+
+
 
 /// \brief controlInfo callback, containing action
 /// commands
@@ -107,10 +111,6 @@ void controlInfoCallback(const controlInfo::ConstPtr &msg);
 /// \brief teleop callback, containing teleop state
 /// \param msg - message containing contronInfo
 void teleopCallback(const teleop::ConstPtr &msg);
-/// \brief instanciates a thread to play an alarm
-/// in the Buzzer
-/// \param type - type of alarm to be thrown
-void play_alarm(ALARM type);
 /* *********************************************** */
 
 int main(int argc, char**argv)
@@ -129,8 +129,7 @@ int main(int argc, char**argv)
    ros::init(argc, argv, "pihw_node" ,ros::init_options::NoSigintHandler);
    setup_threads();   
    setup_omni();
-   setup_alarm(&alarm_mutex);
-   printf("INITIAL MUTEX %p\n",alarm_mutex);
+   setup_alarm();
    ros::NodeHandle pihw_node;
    
    // Setup subscribers, publishers and services
@@ -251,9 +250,11 @@ void *readBatteries(void *per_info)
       //read channel 1 (pc_bat)
       hw.battery_camera = adc.readChannel(1,CAM_REF_VOLT);
       hw.battery_camera += CAM_OFF_VOLT;
-      if(hw.battery_camera>2.5 && hw.battery_camera<CAM_CRIT_VOLT && need_alrm_cam){ 
-         play_alarm(CAM);
-         need_alrm_cam = false;
+      if(hw.battery_camera>2.5 && hw.battery_camera<CAM_CRIT_VOLT){ 
+         if(need_alrm_cam){ 
+            need_alrm_cam = false;
+            play_alarm(CAM);
+         }
       }else need_alrm_cam = true;
       pthread_mutex_unlock(&hw_mutex);
 
@@ -272,9 +273,11 @@ void *readBatteries(void *per_info)
 
       pthread_mutex_lock(&hw_mutex);
       hw.battery_main += MAIN_OFF_VOLT;
-      if(hw.battery_main>2.5 && hw.battery_main<MAIN_CRIT_VOLT && need_alrm_main){ 
-         play_alarm(MAIN);
-         need_alrm_main = false;
+      if(hw.battery_main>2.5 && hw.battery_main<MAIN_CRIT_VOLT){ 
+         if(need_alrm_main){ 
+            need_alrm_main = false;
+            play_alarm(MAIN);
+         }   
       }else need_alrm_main = true;
       pthread_mutex_unlock(&hw_mutex);
 
@@ -309,7 +312,7 @@ void teleopCallback(const teleop::ConstPtr &msg)
 
 void play_alarm(ALARM type)
 {
-   ALARM alarm = type;
-   thpool_add_work(alarm_thpool, throw_alarm, &alarm);  
-   printf("Throwing alarm ...\n"); 
+   ALARM *alarm = new ALARM;
+   *alarm = type;
+   thpool_add_work(alarm_thpool, throw_alarm, alarm);  
 }

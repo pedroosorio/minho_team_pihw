@@ -1,12 +1,11 @@
 #include "alarm.h"
 
-pthread_mutex_t *mutex;
+pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
 /// \brief function that sets up pin and wiringPi's interface for
 /// alarm buzzer
-void setup_alarm(pthread_mutex_t *mt)
+void setup_alarm()
 {
-   mutex = mt;
    wiringPiSetup();
    softToneCreate(ALARM_PIN);   
 }
@@ -17,13 +16,12 @@ void setup_alarm(pthread_mutex_t *mt)
 void throw_alarm(void *type)
 {
    ALARM *alarm = (ALARM *)type;
-   printf("Launching alarm %d\n",*alarm);
+   
+   pthread_mutex_lock(&mutex);
    switch(*alarm){
    
-   printf("MUTEX %p\n",mutex);  
    case MAIN:{
-      printf("Main alarm\n");
-      for(int i=0;i<20;i++){
+      for(int i=0;i<15;i++){
          softToneWrite(ALARM_PIN,BASE);
          usleep(4*TIMESTP);
          softToneWrite(ALARM_PIN,0);
@@ -32,8 +30,7 @@ void throw_alarm(void *type)
       break;
    }
    case PC:{
-      printf("PC alarm\n");
-      for(int i=0;i<5;i++){
+      for(int i=0;i<10;i++){
          softToneWrite(ALARM_PIN,BASE);
          usleep(2*TIMESTP);
          softToneWrite(ALARM_PIN,0);
@@ -46,8 +43,7 @@ void throw_alarm(void *type)
       break;
    }
    case CAM:{
-      printf("Cam alarm\n");
-      for(int i=0;i<4;i++){
+      for(int i=0;i<6;i++){
          softToneWrite(ALARM_PIN,BASE);
          usleep(2*TIMESTP);
          softToneWrite(ALARM_PIN,0);
@@ -64,7 +60,6 @@ void throw_alarm(void *type)
       break;
    }
    case TELE_ON:{
-      printf("Teleop on\n");
       softToneWrite(ALARM_PIN,BASE);
       usleep(5*TIMESTP);
       softToneWrite(ALARM_PIN,BASE+200);
@@ -73,7 +68,6 @@ void throw_alarm(void *type)
       break;
    }
    case TELE_OFF:{
-      printf("Teleop off\n");
       softToneWrite(ALARM_PIN,BASE+200);
       usleep(5*TIMESTP);
       softToneWrite(ALARM_PIN,BASE);
@@ -83,28 +77,29 @@ void throw_alarm(void *type)
    }
    
    case FW_ON:{
-      printf("FREE WHEEL ON\n");
       softToneWrite(ALARM_PIN,BASE+200);
-      usleep(5*TIMESTP);
+      usleep(10*TIMESTP);
       softToneWrite(ALARM_PIN,0);
       break;
    }
    case FW_OFF:{
-      printf("FREE WHEEL OFF\n");
       softToneWrite(ALARM_PIN,BASE-200);
-      usleep(5*TIMESTP);
+      usleep(10*TIMESTP);
       softToneWrite(ALARM_PIN,0);
       break;
    }
 
    }
-
+   
+   pthread_mutex_unlock(&mutex);  
+   delete((ALARM*)type);  
    return;   
 }
 
 /// \brief plays ready sound
 void throw_alarm_ready()
 {
+   pthread_mutex_lock(&mutex);
    softToneWrite(ALARM_PIN,BASE);
    usleep(4*TIMESTP);
    softToneWrite(ALARM_PIN,0);
@@ -129,4 +124,5 @@ void throw_alarm_ready()
    usleep(4*TIMESTP);
    softToneWrite(ALARM_PIN,0);
    usleep(TIMESTP);
+   pthread_mutex_unlock(&mutex);
 }
