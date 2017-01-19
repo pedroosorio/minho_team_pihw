@@ -4,7 +4,7 @@
 
 // PC
 #define PC_REF_VOLT 15.0
-#define PC_CRIT_VOLT 10.0
+#define PC_CRIT_VOLT 10.5
 #define PC_OFF_VOLT 0.0
 
 // CAM

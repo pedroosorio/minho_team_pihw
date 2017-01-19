@@ -53,6 +53,8 @@ bool teleop_active = false;
 pthread_mutex_t hw_mutex = PTHREAD_MUTEX_INITIALIZER;
 /// \brief mutex to protect access to i2c bus
 pthread_mutex_t i2c_mutex = PTHREAD_MUTEX_INITIALIZER;
+/// \brief mutex to protect access to buzzer
+pthread_mutex_t alarm_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 /// \brief publisher of hardwareInfo
 ros::Publisher hw_pub;
@@ -75,6 +77,8 @@ MCP3k8 adc(SPI_DEV_0,1000000,SPI_MODE_0,8,5.0);
 /// \brief thread pool to allow dynamic task assignment
 /// for alarms
 threadpool alarm_thpool;
+bool need_alrm_main = true, need_alrm_pc = true;
+bool need_alrm_cam = true;
 /* *********************************************** */
 
 /*                    FUNCTIONS                    */
@@ -125,7 +129,8 @@ int main(int argc, char**argv)
    ros::init(argc, argv, "pihw_node" ,ros::init_options::NoSigintHandler);
    setup_threads();   
    setup_omni();
-   setup_alarm();
+   setup_alarm(&alarm_mutex);
+   printf("%lx",alarm_mutex);
    ros::NodeHandle pihw_node;
    
    // Setup subscribers, publishers and services
@@ -233,24 +238,44 @@ void *readBatteries(void *per_info)
       pthread_mutex_lock(&hw_mutex);     
       //read channel 1 (pc_bat)
       hw.battery_pc = adc.readChannel(0,PC_REF_VOLT);
-      if(hw.battery_pc>2.5 && hw.battery_pc<PC_CRIT_VOLT) play_alarm(PC);
-      else hw.battery_pc += PC_OFF_VOLT;
+      hw.battery_pc += PC_OFF_VOLT;
+      if(hw.battery_pc>2.5 && hw.battery_pc<PC_CRIT_VOLT) {
+         if(need_alrm_pc){
+            need_alrm_pc = false;
+            play_alarm(PC);
+         }
+      }else need_alrm_pc = true;
       pthread_mutex_unlock(&hw_mutex);
 
       pthread_mutex_lock(&hw_mutex);
       //read channel 1 (pc_bat)
       hw.battery_camera = adc.readChannel(1,CAM_REF_VOLT);
-      if(hw.battery_camera>2.5 && hw.battery_camera<CAM_CRIT_VOLT) play_alarm(CAM);
-      else hw.battery_camera += CAM_OFF_VOLT;
+      hw.battery_camera += CAM_OFF_VOLT;
+      if(hw.battery_camera>2.5 && hw.battery_camera<CAM_CRIT_VOLT && need_alrm_cam){ 
+         play_alarm(CAM);
+         need_alrm_cam = false;
+      }else need_alrm_cam = true;
       pthread_mutex_unlock(&hw_mutex);
 
       pthread_mutex_lock(&hw_mutex);
       //read channel 3 (free_wheel)
       int freewheel = adc.readChannel(2,5.0);
+      bool old_freewheel = hw.free_wheel_activated;
       if(freewheel>2.5) hw.free_wheel_activated = true;
       else hw.free_wheel_activated = false;
 
-      if(hw.battery_main>2.5 && hw.battery_main<MAIN_CRIT_VOLT) play_alarm(MAIN);
+      if(old_freewheel!=hw.free_wheel_activated){
+         if(hw.free_wheel_activated) play_alarm(FW_ON);
+         else play_alarm(FW_OFF);
+      }
+      pthread_mutex_unlock(&hw_mutex);      
+
+      pthread_mutex_lock(&hw_mutex);
+      hw.battery_main += MAIN_OFF_VOLT;
+      if(hw.battery_main>2.5 && hw.battery_main<MAIN_CRIT_VOLT && need_alrm_main){ 
+         play_alarm(MAIN);
+         need_alrm_main = false;
+      }else need_alrm_main = true;
       pthread_mutex_unlock(&hw_mutex);
 
       //Grabber readings will go here
@@ -285,5 +310,6 @@ void teleopCallback(const teleop::ConstPtr &msg)
 void play_alarm(ALARM type)
 {
    ALARM alarm = type;
-   thpool_add_work(alarm_thpool, throw_alarm, &alarm);   
+   thpool_add_work(alarm_thpool, throw_alarm, &alarm);  
+   printf("Throwing alarm ...\n"); 
 }
