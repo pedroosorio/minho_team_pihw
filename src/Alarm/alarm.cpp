@@ -7,7 +7,8 @@ pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 void setup_alarm()
 {
    wiringPiSetup();
-   softToneCreate(ALARM_PIN);   
+   softToneCreate(ALARM_PIN); 
+   pullUpDnControl(ALARM_PIN, PUD_OFF);  
 }
 
 /// \brief instanciates a thread to play an alarm

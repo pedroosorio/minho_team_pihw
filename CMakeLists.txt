@@ -82,6 +82,6 @@ message(STATUS "Source directory: " ${SDIR})
 include_directories(${catkin_INCLUDE_DIRS})
 include_directories(~/catkin_ws/devel/include)
 add_executable(pihw ${SRC})
-target_link_libraries(pihw ${catkin_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT} mcp3k8 Omni3MD Alarm thPool ${WIRINGPI_LIBRARIES})
-add_dependencies(pihw Omni3MD mcp3k8 thPool Alarm minho_team_ros_gencpp)
+target_link_libraries(pihw ${catkin_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT} mcp3k8 Omni3MD Alarm thPool Ada10Dof ${WIRINGPI_LIBRARIES})
+add_dependencies(pihw Omni3MD mcp3k8 thPool Alarm Ada10Dof minho_team_ros_gencpp)
 ##
