@@ -7,6 +7,7 @@
 #include "hwdefines.h"
 #include "utils.h"
 #include <unistd.h>
+#include "alarm.h"
 
 // ##### ROS MSG INCLUDES #####
 // ############################
@@ -34,8 +35,6 @@ using minho_team_ros::requestResetIMU;
 using minho_team_ros::requestOmniProps;
 using minho_team_ros::requestIMULinTable;
 using minho_team_ros::requestKick;
-
-typedef enum BAT_ALARM{MAIN=0,PC,CAM} BAL_ALARM;
 
 /// \brief threads to run the different tasks
 pthread_t th_enc, th_bat, th_imu;
@@ -72,6 +71,8 @@ MCP3k8 adc(SPI_DEV_0,1000000,SPI_MODE_0,8,5.0);
 
 /// \brief sets up the task's threads without running them
 void setup_threads();
+/// \brief sets up Omni3MD initial values
+void setup_omni();
 /// \brief thread function that reads Omni3MD's 
 /// encoders and battery.
 /// \param per_info - pointer to periodic_info to use 
@@ -95,7 +96,8 @@ void teleopCallback(const teleop::ConstPtr &msg);
 /// \brief instanciates a thread to play an alarm
 /// in the Buzzer
 /// \param type - type of alarm to be thrown
-void throw_alarm(BAT_ALARM type);
+void play_alarm(ALARM type);
+
 int main(int argc, char**argv)
 {
    ROS_WARN("Attempting to start PiHw services of pihw_node.");
@@ -111,6 +113,8 @@ int main(int argc, char**argv)
    
    ros::init(argc, argv, "pihw_node" ,ros::init_options::NoSigintHandler);
    setup_threads();   
+   setup_omni();
+   setup_alarm();
    ros::NodeHandle pihw_node;
    
    // Setup subscribers, publishers and services
@@ -120,6 +124,10 @@ int main(int argc, char**argv)
 
    // Start node
    ROS_WARN("MinhoTeam pihw_node started running on ROS.");
+   
+   /* Play ready sound */
+   throw_alarm_ready();   
+   
    ros::AsyncSpinner spinner(2);
    pthread_create(&th_enc, NULL, readEncoders, &pi_enc);
    pthread_create(&th_bat, NULL, readBatteries, &pi_bat);
@@ -140,11 +148,14 @@ void setup_threads()
    pi_enc.id = 1; pi_enc.period_us = 25000; //25ms @ 40Hz  
    pi_bat.id = 2; pi_bat.period_us = 100000; //0.1s @ 10Hz 
    pi_imu.id = 3; pi_imu.period_us = 25000; //25ms @ 40Hz 
-   
+}
+
+void setup_omni()
+{
    uint8_t f1,f2,f3;
    omni.read_firmware(&f1,&f2,&f3);
-   ROS_INFO("Omni3MD: \n\t\t\t\tCtrl Rate %d | Firmware v%d.%d.%d |\n\t\t\t\tTemperature %.2f | Encoder Max %d |\n\t\t\t\tBattery %.2f |", omni.read_control_rate(), f1,f2,f3, omni.read_temperature(), omni.read_enc1_max(),omni.read_battery());  
-   
+   ROS_INFO("Omni3MD: \n\t\t\t\tCtrl Rate %d | Firmware v%d.%d.%d |\n\t\t\t\tTemperature %.2f | Encoder Max %d |\n\t\t\t\tBattery %.2f |", omni.read_control_rate(), f1,f2,f3, omni.read_temperature(), omni.read_enc1_max(),omni.read_battery());
+
    omni.set_i2c_timeout(10);
 }
 
@@ -208,14 +219,14 @@ void *readBatteries(void *per_info)
       pthread_mutex_lock(&hw_mutex);     
       //read channel 1 (pc_bat)
       hw.battery_pc = adc.readChannel(0,PC_REF_VOLT);
-      if(hw.battery_pc>2.5 && hw.battery_pc<PC_CRIT_VOLT) throw_alarm(PC);
+      if(hw.battery_pc>2.5 && hw.battery_pc<PC_CRIT_VOLT) play_alarm(PC);
       else hw.battery_pc += PC_OFF_VOLT;
       pthread_mutex_unlock(&hw_mutex);
 
       pthread_mutex_lock(&hw_mutex);
       //read channel 1 (pc_bat)
       hw.battery_camera = adc.readChannel(1,CAM_REF_VOLT);
-      if(hw.battery_camera>2.5 && hw.battery_camera<CAM_CRIT_VOLT) throw_alarm(CAM);
+      if(hw.battery_camera>2.5 && hw.battery_camera<CAM_CRIT_VOLT) play_alarm(CAM);
       else hw.battery_camera += CAM_OFF_VOLT;
       pthread_mutex_unlock(&hw_mutex);
 
@@ -225,7 +236,7 @@ void *readBatteries(void *per_info)
       if(freewheel>2.5) hw.free_wheel_activated = true;
       else hw.free_wheel_activated = false;
 
-      if(hw.battery_main>2.5 && hw.battery_main<MAIN_CRIT_VOLT) throw_alarm(MAIN);
+      if(hw.battery_main>2.5 && hw.battery_main<MAIN_CRIT_VOLT) play_alarm(MAIN);
       pthread_mutex_unlock(&hw_mutex);
 
       //Grabber readings will go here
@@ -253,15 +264,12 @@ void controlInfoCallback(const controlInfo::ConstPtr &msg)
 void teleopCallback(const teleop::ConstPtr &msg)
 {
    teleop_active = msg->set_teleop;
-   omni.set_enc_value(1,15);
-   usleep(20000);
-   omni.set_enc_value(2,-345);
-   usleep(20000);
-   omni.set_enc_value(3,345);
-   usleep(20000);
+   if(teleop_active) play_alarm(TELE_ON);
+   else play_alarm(TELE_OFF);
 }
 
-void throw_alarm(BAT_ALARM type)
+void play_alarm(ALARM type)
 {
-   ROS_ERROR("ALARM LOW BAT %d",type);
+   ALARM alarm = type;
+   throw_alarm(&type);    
 }
