@@ -19,12 +19,14 @@ message(STATUS "Current directory: " ${PDIR})
 find_package(wiringPi REQUIRED)
 find_package(Threads REQUIRED)
 include_directories(${PDIR}/include ${WIRINGPI_INCLUDE_DIRS})
+include_directories(${PDIR}/include/utilities)
 set(SDIR ${PDIR}/src)
 
 set(MLIB_DIR ${PDIR}/libs)
 link_directories(${MLIB_DIR})
 
 ## Compile mcp3k8 as a shared library
+include_directories(${PDIR}/include/MCP3k8)
 add_library(mcp3k8 SHARED ${SDIR}/MCP3k8/mcp3k8.cpp)
 set_target_properties( mcp3k8
     PROPERTIES
@@ -34,6 +36,7 @@ target_compile_features(mcp3k8 PRIVATE cxx_range_for)
 ##
 
 ## Compile Omni3MD as a shared library
+include_directories(${PDIR}/include/Omni3MD)
 add_library(Omni3MD SHARED ${SDIR}/Omni3MD/Omni3MD.cpp)
 set_target_properties( Omni3MD
     PROPERTIES
@@ -43,6 +46,7 @@ target_compile_features(Omni3MD PRIVATE cxx_range_for)
 ##
 
 ## Compile Ada10Dof as a shared library
+include_directories(${PDIR}/include/Ada10Dof)
 add_library(Ada10Dof SHARED ${SDIR}/Ada10Dof/Ada10Dof.cpp)
 set_target_properties( Ada10Dof
     PROPERTIES
@@ -51,12 +55,22 @@ set_target_properties( Ada10Dof
 target_compile_features(Ada10Dof PRIVATE cxx_range_for)
 ##
 
+## Compile thPool as a shared library
+include_directories(${PDIR}/include/thPool)
+add_library(thPool SHARED ${SDIR}/thPool/thpool.c)
+set_target_properties( thPool
+    PROPERTIES
+    LIBRARY_OUTPUT_DIRECTORY ${MLIB_DIR}
+)
+target_compile_features(thPool PRIVATE cxx_range_for)
+##
+
 ## Compile program
 set(SRC ${SDIR}/main.cpp)
 message(STATUS "Source directory: " ${SDIR})
 include_directories(${catkin_INCLUDE_DIRS})
 include_directories(~/catkin_ws/devel/include)
-add_executable(main ${SRC})
-target_link_libraries(main ${catkin_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT} mcp3k8 Omni3MD ${WIRINGPI_LIBRARIES})
-add_dependencies(main Omni3MD mcp3k8 minho_team_ros_gencpp)
+add_executable(pihw ${SRC})
+target_link_libraries(pihw ${catkin_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT} mcp3k8 Omni3MD thPool ${WIRINGPI_LIBRARIES})
+add_dependencies(pihw Omni3MD mcp3k8 thPool minho_team_ros_gencpp)
 ##

@@ -13,7 +13,7 @@
 #define Omni3MD_h
 
 #ifndef rttimer_h
-#include "rttimer.h"
+#include "utilities/rttimer.h"
 #endif
 
 #include "omni3md_defines.h"

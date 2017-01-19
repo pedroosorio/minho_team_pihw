@@ -18,7 +18,7 @@ inline void setup_alarm()
 /// \brief instanciates a thread to play an alarm
 /// in the Buzzer
 /// \param type - type of alarm to be thrown
-inline void* throw_alarm(void *type)
+inline void throw_alarm(void *type)
 {
    ALARM *alarm = (ALARM *)type;
    switch(*alarm){
@@ -81,7 +81,7 @@ inline void* throw_alarm(void *type)
    
    }
 
-   return NULL;   
+   return;   
 }
 
 /// \brief plays ready sound

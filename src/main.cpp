@@ -1,13 +1,14 @@
 #include <iostream>
-#include "rttimer.h"
+#include "utilities/rttimer.h"
 #include "MCP3k8/mcp3k8.h"
 #include "Omni3MD/Omni3MD.h"
 #include "Ada10Dof/Ada10Dof.h"
 #include "ros/ros.h"
-#include "hwdefines.h"
-#include "utils.h"
+#include "utilities/hwdefines.h"
+#include "utilities/utils.h"
 #include <unistd.h>
-#include "alarm.h"
+#include "utilities/alarm.h"
+#include "thPool/thpool.h"
 
 // ##### ROS MSG INCLUDES #####
 // ############################
@@ -36,6 +37,8 @@ using minho_team_ros::requestOmniProps;
 using minho_team_ros::requestIMULinTable;
 using minho_team_ros::requestKick;
 
+/*                    VARIABLES                    */
+/* *********************************************** */
 /// \brief threads to run the different tasks
 pthread_t th_enc, th_bat, th_imu;
 /// \brief periodic_info structs to time the differents
@@ -69,6 +72,13 @@ Omni3MD omni(0x18,&i2c_mutex);
 /// with 8-channel 10bit ADC
 MCP3k8 adc(SPI_DEV_0,1000000,SPI_MODE_0,8,5.0);
 
+/// \brief thread pool to allow dynamic task assignment
+/// for alarms
+threadpool alarm_thpool;
+/* *********************************************** */
+
+/*                    FUNCTIONS                    */
+/* *********************************************** */
 /// \brief sets up the task's threads without running them
 void setup_threads();
 /// \brief sets up Omni3MD initial values
@@ -97,6 +107,7 @@ void teleopCallback(const teleop::ConstPtr &msg);
 /// in the Buzzer
 /// \param type - type of alarm to be thrown
 void play_alarm(ALARM type);
+/* *********************************************** */
 
 int main(int argc, char**argv)
 {
@@ -132,11 +143,14 @@ int main(int argc, char**argv)
    pthread_create(&th_enc, NULL, readEncoders, &pi_enc);
    pthread_create(&th_bat, NULL, readBatteries, &pi_bat);
    pthread_create(&th_imu, NULL, readIMU, &pi_imu);
+   alarm_thpool = thpool_init(3); // One thread per alarm
 	spinner.start();
 
    pthread_join(th_enc, NULL);
    pthread_join(th_bat, NULL);
    pthread_join(th_imu, NULL);
+   thpool_wait(alarm_thpool);
+   thpool_destroy(alarm_thpool);
    spinner.stop();
 	ros::shutdown();
    ROS_ERROR("Exited pihw_node.");
@@ -271,5 +285,5 @@ void teleopCallback(const teleop::ConstPtr &msg)
 void play_alarm(ALARM type)
 {
    ALARM alarm = type;
-   throw_alarm(&type);    
+   thpool_add_work(alarm_thpool, throw_alarm, &alarm);   
 }
