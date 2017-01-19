@@ -45,6 +45,17 @@ set_target_properties( Omni3MD
 target_compile_features(Omni3MD PRIVATE cxx_range_for)
 ##
 
+## Compile Alarm as a shared library
+include_directories(${PDIR}/include/Alarm)
+add_library(Alarm SHARED ${SDIR}/Alarm/alarm.cpp)
+set_target_properties( Alarm
+    PROPERTIES
+    LIBRARY_OUTPUT_DIRECTORY ${MLIB_DIR}
+)
+target_link_libraries(Alarm ${CMAKE_THREAD_LIBS_INIT})
+target_compile_features(Alarm PRIVATE cxx_range_for)
+##
+
 ## Compile Ada10Dof as a shared library
 include_directories(${PDIR}/include/Ada10Dof)
 add_library(Ada10Dof SHARED ${SDIR}/Ada10Dof/Ada10Dof.cpp)
@@ -71,6 +82,6 @@ message(STATUS "Source directory: " ${SDIR})
 include_directories(${catkin_INCLUDE_DIRS})
 include_directories(~/catkin_ws/devel/include)
 add_executable(pihw ${SRC})
-target_link_libraries(pihw ${catkin_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT} mcp3k8 Omni3MD thPool ${WIRINGPI_LIBRARIES})
-add_dependencies(pihw Omni3MD mcp3k8 thPool minho_team_ros_gencpp)
+target_link_libraries(pihw ${catkin_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT} mcp3k8 Omni3MD Alarm thPool ${WIRINGPI_LIBRARIES})
+add_dependencies(pihw Omni3MD mcp3k8 thPool Alarm minho_team_ros_gencpp)
 ##

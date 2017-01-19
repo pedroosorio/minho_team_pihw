@@ -1,17 +1,10 @@
-/* Here some pins shall be defined */
-#define ALARM_PIN 7 //GPIO4 - GPI0_GCLK - BOT PIN 4
-#define BASE 1000
-#define TIMESTP 50000
-typedef enum ALARM{MAIN=0,PC,CAM,TELE_ON,TELE_OFF,FW_ON,FW_OFF} ALARM;
-
-#include <wiringPi.h>
-#include <softTone.h>
+#include "alarm.h"
 
 pthread_mutex_t *mutex;
 
 /// \brief function that sets up pin and wiringPi's interface for
 /// alarm buzzer
-inline void setup_alarm(pthread_mutex_t *mt)
+void setup_alarm(pthread_mutex_t *mt)
 {
    mutex = mt;
    wiringPiSetup();
@@ -21,13 +14,13 @@ inline void setup_alarm(pthread_mutex_t *mt)
 /// \brief instanciates a thread to play an alarm
 /// in the Buzzer
 /// \param type - type of alarm to be thrown
-inline void throw_alarm(void *type)
+void throw_alarm(void *type)
 {
    ALARM *alarm = (ALARM *)type;
    printf("Launching alarm %d\n",*alarm);
    switch(*alarm){
    
-   printf("%lx\n",mutex);  
+   printf("MUTEX %p\n",mutex);  
    case MAIN:{
       printf("Main alarm\n");
       for(int i=0;i<20;i++){
@@ -110,7 +103,7 @@ inline void throw_alarm(void *type)
 }
 
 /// \brief plays ready sound
-inline void throw_alarm_ready()
+void throw_alarm_ready()
 {
    softToneWrite(ALARM_PIN,BASE);
    usleep(4*TIMESTP);

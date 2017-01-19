@@ -7,7 +7,7 @@
 #include "utilities/hwdefines.h"
 #include "utilities/utils.h"
 #include <unistd.h>
-#include "utilities/alarm.h"
+#include "Alarm/alarm.h"
 #include "thPool/thpool.h"
 
 // ##### ROS MSG INCLUDES #####
@@ -130,7 +130,7 @@ int main(int argc, char**argv)
    setup_threads();   
    setup_omni();
    setup_alarm(&alarm_mutex);
-   printf("%lx",alarm_mutex);
+   printf("INITIAL MUTEX %p\n",alarm_mutex);
    ros::NodeHandle pihw_node;
    
    // Setup subscribers, publishers and services
