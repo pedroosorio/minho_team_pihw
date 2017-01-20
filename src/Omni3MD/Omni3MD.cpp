@@ -195,8 +195,8 @@ void Omni3MD::read_encoders(int16_t* enc1,int16_t* enc2,int16_t* enc3)
    uint8_t values[6] = {0,0,0,0,0,0};
    i2cRequestData(COMMAND_ENC1_INC,6,values);
    *enc1 = (((int)values[0])<<8)|((int)values[1]&0xFF);
-   *enc2 = (((int)(values[2]^0x80))<<8)|((int)values[3]&0xFF);
-   *enc3 = (((int)(values[4]^0x80))<<8)|((int)values[5]&0xFF);
+   *enc2 = (((int)(values[2]))<<8)|((int)values[3]&0xFF);
+   *enc3 = (((int)(values[4]))<<8)|((int)values[5]&0xFF);
 }
 
 void Omni3MD::read_mov_data(int16_t* enc1,int16_t* enc2,int16_t* enc3,float* bat,float* temp)
@@ -204,8 +204,8 @@ void Omni3MD::read_mov_data(int16_t* enc1,int16_t* enc2,int16_t* enc3,float* bat
    uint8_t values[10] = {0,0,0,0,0,0,0,0,0,0};
    i2cRequestData(COMMAND_ENC1_INC,10,values);
    *enc1 = (((int)values[0])<<8)|((int)values[1]&0xFF);
-   *enc2 = (((int)(values[2]^0x80))<<8)|((int)values[3]&0xFF);
-   *enc3 = (((int)(values[4]^0x80)<<8))|((int)values[5]&0xFF);
+   *enc2 = (((int)(values[2]))<<8)|((int)values[3]&0xFF);
+   *enc3 = (((int)(values[4])<<8))|((int)values[5]&0xFF);
    *bat = ((float)((((int)values[6])<<8)|((int)values[7]&0xFF)))/10.0;
    *temp = ((float)((((int)values[8])<<8)|((int)values[9]&0xFF)))/10.0;
    
