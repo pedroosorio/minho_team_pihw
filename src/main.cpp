@@ -255,17 +255,12 @@ void *readEncoders(void *per_info)
 
    while(1){
       pthread_mutex_lock(&hw_mutex);
-      //read encoders
       pthread_mutex_lock(&i2c_mutex);
-//      omni.read_encoders(&hw.encoder_1,&hw.encoder_2,&hw.encoder_3);
+      // read encoders
       hw.encoder_1 = omni.read_enc1();
       hw.encoder_2 = omni.read_enc2();
       hw.encoder_3 = omni.read_enc3();
   
-//      int16_t a,b,c; float d,e;
-//      omni.read_mov_data(&a,&b,&c,&d,&e);
-//      printf("%d %d %d %.2f %.2f\n",a,b,c,d,e);
-
       pthread_mutex_unlock(&i2c_mutex);
       pthread_mutex_unlock(&hw_mutex);
 

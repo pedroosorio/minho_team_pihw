@@ -240,7 +240,7 @@ void Ada10Dof::set_magnetometer_gain(Ada10Dof_MagGain gain)
 
 void Ada10Dof::set_magnetometer_rate(Ada10Dof_MagRate rate)
 {
-   uint8_t data[1] = {((uint8_t)rate & 0x07) << 2};
+   uint8_t data[1] = {((uint8_t)(rate&0x07))<<2};
    i2cSendData(MAG_ADDRESS,REGISTER_MAG_CRA_REG_M,1,data);
 }
 
@@ -275,6 +275,9 @@ int Ada10Dof::correct_imu()
    float raw = raw_imu_value;
    pthread_mutex_unlock(&raw_val_mutex);
    
+   if(raw<alfa) raw = raw+360-alfa;
+   else raw = raw-alfa;
+
    pthread_mutex_lock(&lin_mutex);
    while(raw>imu_values[counter] && counter<imu_values.size()) counter++;
    int ret = (int)b[counter-1]+m[counter-1]*raw;
@@ -290,6 +293,7 @@ int Ada10Dof::get_heading()
    pthread_mutex_lock(&raw_val_mutex);
    /* Do i2c readings and stuff, computing value to raw_imu_value */
    raw_imu_value = read_magnetometer_z();
+   
    pthread_mutex_unlock(&raw_val_mutex);
 
    return correct_imu();
