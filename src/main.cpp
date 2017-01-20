@@ -84,9 +84,9 @@ ros::ServiceServer kick_sv;
 /// \brief Omni3MD object to communicate through I2C bus
 /// with omni motor controller
 Omni3MD omni(0x18,&i2c_mutex);
-/// \brief Omni3MD object to communicate through I2C bus
-/// with omni motor controller
-Ada10Dof imu(0x32);
+/// \brief Ada10Dof object to communicate through I2C bus
+/// with IMU
+Ada10Dof imu;
 /// \brief MCP3008 object to communicate through SPI bus
 /// with 8-channel 10bit ADC
 MCP3k8 adc(SPI_DEV_0,1000000,SPI_MODE_0,8,5.0);

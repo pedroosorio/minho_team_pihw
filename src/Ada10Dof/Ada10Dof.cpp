@@ -11,13 +11,12 @@ pthread_mutex_t raw_val_mutex = PTHREAD_MUTEX_INITIALIZER;
 /// \brief mutex to protect acess to linearization table
 pthread_mutex_t lin_mutex = PTHREAD_MUTEX_INITIALIZER;;
 
-Ada10Dof::Ada10Dof(uint8_t adaAddress)
+Ada10Dof::Ada10Dof()
 {
-   i2c_slave_address = adaAddress;
    init = false;
    device_name = "/dev/i2c-1";
-
-   if(i2c_connect(adaAddress)>0)printf("_ADA10DOF: Initialization Successful.\n");
+   uint8_t address = MAG_ADDRESS;
+   if(i2c_connect(address)>0)printf("_ADA10DOF: Initialization Successful.\n");
    else printf("_ADA10DOF: Initialization Failed.\n");
    
    alfa = raw_imu_value = 0;
@@ -41,23 +40,24 @@ Ada10Dof::Ada10Dof(uint8_t adaAddress)
        printf("_ADA10DOF: No configuration file found. A sample one will be written.");
        write_imu_configuration();     
    }
+
+   init_magnetometer();
 }
 
 /* Setup Routines */
 /*************************************************************/
-int Ada10Dof::i2c_connect(uint8_t adaAddress)
+int Ada10Dof::i2c_connect(uint8_t address)
 {
    if(init) { printf("_ADA10DOF: I2C Interface already opened"); return -1; }
 
    printf("_ADA10DOF: Opening Ada10Dof in %s\n",device_name.c_str());
-   i2c_slave_address = adaAddress;
    /* Open I2C Interface */
 	if((i2c_fd = open(device_name.c_str(), O_RDWR)) < 0){
 		perror("_ADA10DOF: Couldn't open I2C Interface.");
       return -1;
 	}
 	
-   if (ioctl (i2c_fd, I2C_SLAVE, i2c_slave_address) < 0){
+   if (ioctl (i2c_fd, I2C_SLAVE, address) < 0){
       perror("_ADA10DOF: Couldn't access I2C Device.");
       return -1;
    }
@@ -66,9 +66,9 @@ int Ada10Dof::i2c_connect(uint8_t adaAddress)
    return i2c_fd;
 }
 
-int Ada10Dof::i2c_start_transmission()
+int Ada10Dof::i2c_start_transmission(uint8_t address)
 {
-   if (ioctl (i2c_fd, I2C_SLAVE, i2c_slave_address) < 0){
+   if (ioctl (i2c_fd, I2C_SLAVE, address) < 0){
       perror("_ADA10DOF: Couldn't access I2C Device.");
       return -1;
     }
@@ -182,6 +182,89 @@ void Ada10Dof::get_imu_configuration(int *st, std::vector<uint16_t> *imu)
 }
 /*************************************************************/
 
+/* IMU Specific setup functions */
+/* Magnetometer */
+/*************************************************************/
+bool Ada10Dof::init_magnetometer()
+{
+   // enable magnetometer
+   uint8_t data[1] = {0x00};
+   i2cSendData(MAG_ADDRESS,REGISTER_MAG_MR_REG_M,1,data);
+   
+   uint8_t whoami =  i2cRequestByte(MAG_ADDRESS,REGISTER_MAG_CRA_REG_M);
+   if(whoami == 0x10){
+      set_magnetometer_gain(MAGGAIN_1_3);
+      set_magnetometer_rate(MAGRATE_75);
+      printf("_ADA10DOF: Magnetometer initialized.\n");
+      return true;
+   } else { printf("_ADA10DOF: Failed to connect to Magnetometer.\n"); return false;}
+}
+
+void Ada10Dof::set_magnetometer_gain(Ada10Dof_MagGain gain)
+{
+   uint8_t data[1] = {gain};
+   i2cSendData(MAG_ADDRESS,REGISTER_MAG_CRB_REG_M,1,data);
+
+   switch(gain)
+   {
+    case MAGGAIN_1_3:
+      mag_gauss_xy = 1100.0;
+      mag_gauss_z  = 980.0;
+      break;
+    case MAGGAIN_1_9:
+      mag_gauss_xy = 855.0;
+      mag_gauss_z  = 760.0;
+      break;
+    case MAGGAIN_2_5:
+      mag_gauss_xy = 670.0;
+      mag_gauss_z  = 600.0;
+      break;
+    case MAGGAIN_4_0:
+      mag_gauss_xy = 450.0;
+      mag_gauss_z  = 400.0;
+      break;
+    case MAGGAIN_4_7:
+      mag_gauss_xy = 400.0;
+      mag_gauss_z  = 355.0;
+      break;
+    case MAGGAIN_5_6:
+      mag_gauss_xy = 330.0;
+      mag_gauss_z  = 295.0;
+      break;
+    case MAGGAIN_8_1:
+      mag_gauss_xy = 230.0;
+      mag_gauss_z  = 205.0;
+      break;
+   }
+}
+
+void Ada10Dof::set_magnetometer_rate(Ada10Dof_MagRate rate)
+{
+   uint8_t data[1] = {((uint8_t)rate & 0x07) << 2};
+   i2cSendData(MAG_ADDRESS,REGISTER_MAG_CRA_REG_M,1,data);
+}
+
+float Ada10Dof::read_magnetometer_z()
+{
+   uint16_t mag_x,mag_y;
+   uint8_t values[6] = {0,0,0,0,0,0};
+   i2cRequestData(MAG_ADDRESS, REGISTER_MAG_OUT_X_H_M, 6, values);
+   mag_x = (int16_t)((uint16_t)values[1] | ((uint16_t)values[0] << 8));
+   mag_y = (int16_t)((uint16_t)values[5] | ((uint16_t)values[4] << 8));
+   
+   return (float)atan2((float)mag_y/mag_gauss_xy*GAUSS_TO_MICROTESLA
+                      ,(float)mag_x/mag_gauss_xy*GAUSS_TO_MICROTESLA)*RADTODEG;
+}
+/*************************************************************/       
+/* Accelerometer */
+/*************************************************************/ 
+/// \brief reads whoami register and sets everything up
+/// \return - true on success
+bool Ada10Dof::init_accelerometer()
+{
+}
+/*************************************************************/ 
+
 
 /* Reading Routines */
 /*************************************************************/
@@ -200,42 +283,48 @@ int Ada10Dof::correct_imu()
    return ret;
 }
 
+/* Implement all the reading stuff here */
+
 int Ada10Dof::get_heading()
 {
    pthread_mutex_lock(&raw_val_mutex);
    /* Do i2c readings and stuff, computing value to raw_imu_value */
+   raw_imu_value = read_magnetometer_z();
    pthread_mutex_unlock(&raw_val_mutex);
 
    return correct_imu();
 }
 /*************************************************************/
 
-int Ada10Dof::i2cRequestByte(uint8_t command)
+/* I2C Bus communication Functions
+   /*************************************************************/ 
+int Ada10Dof::i2cRequestByte(uint8_t address, uint8_t command)
 {
-   i2c_start_transmission();
+   i2c_start_transmission(address);
    __u8 byte[1];
    if(i2c_smbus_read_i2c_block_data(i2c_fd,command,1,byte)!=1) return -1;
    return (int)byte[0];
 }
 
-int Ada10Dof::i2cRequestWord(uint8_t command)
+int Ada10Dof::i2cRequestWord(uint8_t address, uint8_t command)
 {
-   i2c_start_transmission();
+   i2c_start_transmission(address);
    __u8 bytes[2];
    if(i2c_smbus_read_i2c_block_data(i2c_fd,command,2,bytes)!=2) return -1;
    return ((int)bytes[0]<<8|(int)(bytes[1]&0xFF));  
 }
 
-int Ada10Dof::i2cRequestData(uint8_t command, uint8_t length, uint8_t* values)
+int Ada10Dof::i2cRequestData(uint8_t address, uint8_t command, uint8_t length, uint8_t* values)
 {
-   i2c_start_transmission();
+   i2c_start_transmission(address);
    int bytes = i2c_smbus_read_i2c_block_data(i2c_fd,command,length,values);
    if(bytes!=length) return -1;
    else return bytes;
 }
 
-int Ada10Dof::i2cSendData(uint8_t command, uint8_t length, uint8_t* values)
+int Ada10Dof::i2cSendData(uint8_t address, uint8_t command, uint8_t length, uint8_t* values)
 {
-   i2c_start_transmission();
+   i2c_start_transmission(address);
    return i2c_smbus_write_i2c_block_data(i2c_fd,command,length,values);
 }
+   /*************************************************************/ 

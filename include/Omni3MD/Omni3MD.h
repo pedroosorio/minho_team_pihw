@@ -27,7 +27,7 @@
 #include <asm/ioctl.h>
 #include <sys/types.h>
 #include <iostream>
-
+#include <vector>
 
 class Omni3MD
 {
@@ -284,7 +284,8 @@ class Omni3MD
    periodic_info watchdog_pi;
    /// \brief boolean to detect if timeout is enabled
    bool timeout_active;
-   
+   /// \brief file path for configuration file
+   std::string filepath;
 
    /// \brief function to use I2C bus to read a byte from the
    /// specified register. 
