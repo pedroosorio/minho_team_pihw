@@ -17,8 +17,17 @@
 #include <sys/ioctl.h>
 #include <asm/ioctl.h>
 #include <sys/types.h>
-#include <iostream>
 #include <vector>
+#include "rapidjson/document.h"     // rapidjson's DOM-style API
+#include "rapidjson/prettywriter.h" // for stringify JSON
+#include <iostream>
+#include <sstream>
+#include <fstream>
+
+using namespace rapidjson;
+using namespace std;
+
+#define CONFIG_FILE "/.mtconfigs/.ada10dof.cfg"
 
 class Ada10Dof
 {
@@ -47,7 +56,7 @@ class Ada10Dof
 
    /// \brief reads standard file containing IMU configuration
    /// \return - true if reading was successful
-   bool read_imu_configuration();
+   bool read_imu_configuration(int *ret);
 
    /// \brief set imu configuration
    /// \param st - angle step to be applied
@@ -88,6 +97,8 @@ class Ada10Dof
    float raw_imu_value;
    /// \brief value representing reference 0º
    float alfa;
+   /// \brief file path for configuration file
+   std::string filepath;
 
    /* Linearization */
    /// \brief step between linearization points   

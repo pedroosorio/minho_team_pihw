@@ -195,9 +195,9 @@ int main(int argc, char**argv)
    
    reset_imu_sv = pihw_node.advertiseService("requestResetIMU",
                             resetIMUReferenceService);  
-   omni_prop_sv = pihw_node.advertiseService("requestIMULinTable",
+   omni_prop_sv = pihw_node.advertiseService("requestOmniProps",
                             OmniPropsService);
-   imu_table_sv = pihw_node.advertiseService("requestOmniProps",
+   imu_table_sv = pihw_node.advertiseService("requestIMULinTable",
                             IMUTableService);
    kick_sv = pihw_node.advertiseService("requestKick",
                             kickService);
@@ -369,7 +369,6 @@ void halt_pulse(void *time)
    int *delay = (int *)time;
    usleep(*delay);
    digitalWrite(KICK_PIN,LOW);   
-   printf("Finished Kicking\n");
    delete((int *)time);
 }
 
@@ -411,6 +410,7 @@ bool IMUTableService(requestIMULinTable::Request &req, requestIMULinTable::Respo
 {
    if(req.is_set){
       if(imu.set_imu_configuration(req.imuConf.step,req.imuConf.imu_values)){
+         ROS_INFO("_ADA10DOF: New parameters for linearization table set.");
          res.imuConf = req.imuConf;    
       } else ROS_ERROR("_ADA10DOF: Wrong parameters for linearization table.");
    } else {
@@ -419,7 +419,6 @@ bool IMUTableService(requestIMULinTable::Request &req, requestIMULinTable::Respo
       imu.get_imu_configuration(&step,&imu_values);
       res.imuConf.step = step;
       res.imuConf.imu_values = imu_values;  
-      ROS_INFO("_ADA10DOF: New parameters for linearization table set.");
    }
    
    return true; 
