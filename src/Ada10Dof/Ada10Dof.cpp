@@ -37,7 +37,7 @@ Ada10Dof::Ada10Dof()
    pthread_mutex_unlock(&lin_mutex);
    
    if(ret==0) { //it means there is no config file
-       printf("_ADA10DOF: No configuration file found. A sample one will be written.");
+       printf("_ADA10DOF: Errors in JSON file (not found/corrupted). A sample one will be written.\n");
        write_imu_configuration();     
    }
 
@@ -79,6 +79,7 @@ void Ada10Dof::set_imu_reference()
 {
    pthread_mutex_lock(&raw_val_mutex);  
    alfa = raw_imu_value;
+   write_imu_configuration();
    pthread_mutex_unlock(&raw_val_mutex);
 }
 
@@ -98,21 +99,22 @@ bool Ada10Dof::read_imu_configuration(int *ret)
    char *cstr = new char[config.length() + 1];
    strcpy(cstr, config.c_str());
    if (document.ParseInsitu(cstr).HasParseError() || !document.IsObject()){
-      cout << "Error parsing JSON file \n";
+      printf("_ADA10DOF: Error parsing JSON file.\n");
+      (*ret) = 0;
       return false;
    }else {
       if(document["alfa"].IsNumber()) alfa = document["alfa"].GetDouble();
-      else { printf("_ADA10DOF: Error in variable \"alfa\"\n"); return false;} 
+      else { printf("_ADA10DOF: Error in variable \"alfa\".\n"); return false;} 
 
       if(document["step"].IsNumber()) step = document["step"].GetDouble();
-      else { printf("_ADA10DOF: Error in variable \"step\"\n"); return false;} 
+      else { printf("_ADA10DOF: Error in variable \"step\".\n"); return false;} 
 
       if(document["imu_values"].IsArray()){
          const Value& a = document["imu_values"];
          if((360.0/(float)step) == a.Size()-1){
             for(SizeType i = 0; i < a.Size(); i++) imu_values.push_back(a[i].GetInt());
-         } else { printf("_ADA10DOF: Error in variable \"imu_values\"\n"); return false;}
-      }else { printf("_ADA10DOF: Error in variable \"imu_values\"\n"); return false;} 
+         } else { printf("_ADA10DOF: Error in variable \"imu_values\".\n"); return false;}
+      }else { printf("_ADA10DOF: Error in variable \"imu_values\".\n"); return false;} 
    }
    
    return true;
@@ -162,14 +164,15 @@ void Ada10Dof::write_imu_configuration()
    if(!outfile.is_open()){ 
       printf("_ADA10DOF: Error opening JSON configuration to write. Will create configuration folder and file.\n"); 
       system("mkdir ~/.mtconfigs");
+      outfile.open(filepath.c_str());
    }
    
-   outfile.open(filepath.c_str());
    StringBuffer sb;
    PrettyWriter<StringBuffer> writer(sb);
    document.Accept(writer);
    std::string data(sb.GetString());
    outfile << data;
+   outfile.flush();
    outfile.close();
    printf("_ADA10DOF: New configuration file written.\n");
 
@@ -192,12 +195,18 @@ bool Ada10Dof::init_magnetometer()
    i2cSendData(MAG_ADDRESS,REGISTER_MAG_MR_REG_M,1,data);
    
    uint8_t whoami =  i2cRequestByte(MAG_ADDRESS,REGISTER_MAG_CRA_REG_M);
-   if(whoami == 0x10){
+   // 0x10 default reg value for 15Hz. 0x18 reg value for 75Hz.
+   if(whoami == 0x10 || whoami == 0x18){
       set_magnetometer_gain(MAGGAIN_1_3);
       set_magnetometer_rate(MAGRATE_75);
       printf("_ADA10DOF: Magnetometer initialized.\n");
       return true;
-   } else { printf("_ADA10DOF: Failed to connect to Magnetometer.\n"); return false;}
+   } else { 
+      mag_gauss_xy = 1100.0;
+      mag_gauss_z  = 980.0;
+      printf("_ADA10DOF: Failed to connect to Magnetometer.\n"); 
+      return false;
+   }
 }
 
 void Ada10Dof::set_magnetometer_gain(Ada10Dof_MagGain gain)
@@ -240,13 +249,13 @@ void Ada10Dof::set_magnetometer_gain(Ada10Dof_MagGain gain)
 
 void Ada10Dof::set_magnetometer_rate(Ada10Dof_MagRate rate)
 {
-   uint8_t data[1] = {((uint8_t)(rate&0x07))<<2};
+   uint8_t data[1] = {static_cast<uint8_t>(((uint8_t)rate&0x07)<<2)};
    i2cSendData(MAG_ADDRESS,REGISTER_MAG_CRA_REG_M,1,data);
 }
 
 float Ada10Dof::read_magnetometer_z()
 {
-   uint16_t mag_x,mag_y;
+   int16_t mag_x,mag_y;
    uint8_t values[6] = {0,0,0,0,0,0};
    i2cRequestData(MAG_ADDRESS, REGISTER_MAG_OUT_X_H_M, 6, values);
    mag_x = (int16_t)((uint16_t)values[1] | ((uint16_t)values[0] << 8));
@@ -293,7 +302,6 @@ int Ada10Dof::get_heading()
    pthread_mutex_lock(&raw_val_mutex);
    /* Do i2c readings and stuff, computing value to raw_imu_value */
    raw_imu_value = read_magnetometer_z();
-   
    pthread_mutex_unlock(&raw_val_mutex);
 
    return correct_imu();
