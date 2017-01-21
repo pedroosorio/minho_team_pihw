@@ -103,7 +103,13 @@ class Ada10Dof
    /*************************************************************/ 
    /// \brief reads whoami register and sets everything up
    /// \return - true on success
-   bool init_accelerometer();   
+   bool init_accelerometer();  
+   /// \brief sets accelerometer sensing scale
+   /// \param scale - scale to be set 
+   void set_accelerometer_scale(Ada10Dof_AccelScale scale);
+   /// \brief sets magnetometer update rate 
+   /// \param rate - update rate in Hz
+   void set_accelerometer_rate(Ada10Dof_AccelRate rate);
    /*************************************************************/ 
 
 
@@ -126,6 +132,7 @@ class Ada10Dof
    std::string filepath;   
    float mag_gauss_xy;
    float mag_gauss_z;
+   float accel_g_lsb;
    /*************************************************************/
 
    /* Linearization */

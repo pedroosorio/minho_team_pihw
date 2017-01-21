@@ -60,6 +60,22 @@ typedef enum
    REGISTER_ACCEL_TIME_LATENCY_A      = 0x3C,
    REGISTER_ACCEL_TIME_WINDOW_A       = 0x3D
 } Ada10Dof_AccelReg;
+
+typedef enum
+{
+   ACCEL_SCALE_2G = 0x00,
+   ACCEL_SCALE_4G = 0x10,
+   ACCEL_SCALE_8G = 0x30
+} Ada10Dof_AccelScale;
+
+typedef enum
+{
+   ACCEL_RATE_50 = 0x27,
+   ACCEL_RATE_100 = 0x2F,
+   ACCEL_RATE_400 = 0x37,
+   ACCEL_RATE_1000 = 0x3F,
+} Ada10Dof_AccelRate;
+/**********************************************************/
 /**********************************************************/
 
 /* MAG REGISTERS */
@@ -83,6 +99,7 @@ typedef enum
    REGISTER_MAG_TEMP_OUT_L_M          = 0x32
 } Ada10Dof_MagReg;
 /**********************************************************/
+
 
 /* MAG GAIN SETTINGS */
 /**********************************************************/

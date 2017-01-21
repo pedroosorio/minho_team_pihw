@@ -42,6 +42,7 @@ Ada10Dof::Ada10Dof()
    }
 
    init_magnetometer();
+   init_accelerometer();
 }
 
 /* Setup Routines */
@@ -271,6 +272,46 @@ float Ada10Dof::read_magnetometer_z()
 /// \return - true on success
 bool Ada10Dof::init_accelerometer()
 {
+   // enable magnetometer
+   uint8_t data[1] = {ACCEL_RATE_50}; // 50Hz
+   i2cSendData(ACCEL_ADDRESS,REGISTER_ACCEL_CTRL_REG1_A,1,data);
+   
+   uint8_t whoami =  i2cRequestByte(ACCEL_ADDRESS,REGISTER_ACCEL_CTRL_REG1_A);
+   if(whoami == ACCEL_RATE_50){
+      set_accelerometer_scale(ACCEL_SCALE_2G);
+      set_accelerometer_rate(ACCEL_RATE_50);
+      printf("_ADA10DOF: Accelerometer initialized.\n");
+      return true;
+   } else { 
+      accel_g_lsb = 0.001;
+      printf("_ADA10DOF: Failed to connect to Accelerometer.\n"); 
+      return false;
+   }
+}
+
+void Ada10Dof::set_accelerometer_scale(Ada10Dof_AccelScale scale)
+{
+   uint8_t data[1] = {scale};
+   i2cSendData(ACCEL_ADDRESS,REGISTER_ACCEL_CTRL_REG1_A,1,data); 
+
+   switch(scale)
+   {
+    case ACCEL_SCALE_2G:
+      accel_g_lsb = 0.001;
+      break;
+    case ACCEL_SCALE_4G:
+      accel_g_lsb = 0.002;
+      break;
+    case ACCEL_SCALE_8G:
+      accel_g_lsb = 0.0039;
+      break;
+   }   
+}
+
+void Ada10Dof::set_accelerometer_rate(Ada10Dof_AccelRate rate)
+{
+   uint8_t data[1] = {rate};
+   i2cSendData(ACCEL_ADDRESS,REGISTER_ACCEL_CTRL_REG4_A,1,data);   
 }
 /*************************************************************/ 
 
