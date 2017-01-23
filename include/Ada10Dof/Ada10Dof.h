@@ -23,7 +23,7 @@
 #include <iostream>
 #include <sstream>
 #include <fstream>
-
+#include <sys/time.h>
 using namespace rapidjson;
 using namespace std;
 
