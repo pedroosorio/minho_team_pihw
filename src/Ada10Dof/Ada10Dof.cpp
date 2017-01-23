@@ -313,6 +313,21 @@ void Ada10Dof::set_accelerometer_rate(Ada10Dof_AccelRate rate)
    uint8_t data[1] = {rate};
    i2cSendData(ACCEL_ADDRESS,REGISTER_ACCEL_CTRL_REG4_A,1,data);   
 }
+
+void Ada10Dof::read_accelerometer(float *pitch, float *roll)
+{
+   float acc_x,acc_y,acc_z;
+   uint8_t values[6] = {0,0,0,0,0,0};
+   i2cRequestData(ACCEL_ADDRESS, REGISTER_ACCEL_OUT_X_L_A|0x80, 6, values);
+   acc_x = ((int16_t)(values[1] | (values[0] << 8)) >> 4)*accel_g_lsb*GRAVITY_EARTH;
+   acc_y = ((int16_t)(values[3] | (values[2] << 8)) >> 4)*accel_g_lsb*GRAVITY_EARTH;
+   acc_z = ((int16_t)(values[5] | (values[4] << 8)) >> 4)*accel_g_lsb*GRAVITY_EARTH;
+
+   float signOfZ = acc_z >= 0 ? 1.0F : -1.0F;
+   (*roll) = (float)atan2(acc_y, sqrt(acc_x*acc_x+acc_z*acc_z))*RADTODEG;
+   (*pitch) = (float)atan2(acc_x, signOfZ*sqrt(acc_y*acc_y+acc_z*acc_z))*RADTODEG;
+
+}
 /*************************************************************/ 
 
 
@@ -344,6 +359,10 @@ int Ada10Dof::get_heading()
    /* Do i2c readings and stuff, computing value to raw_imu_value */
    raw_imu_value = read_magnetometer_z();
    pthread_mutex_unlock(&raw_val_mutex);
+
+   float pitch = 0.0, roll = 0.0;
+   read_accelerometer(&pitch,&roll);
+   printf("%.2f %.2f\n",pitch, roll);
 
    return correct_imu();
 }

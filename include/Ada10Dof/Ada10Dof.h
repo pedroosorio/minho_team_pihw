@@ -110,6 +110,10 @@ class Ada10Dof
    /// \brief sets magnetometer update rate 
    /// \param rate - update rate in Hz
    void set_accelerometer_rate(Ada10Dof_AccelRate rate);
+   /// \brief reads accelerometer X and Y component
+   /// \param pitch - x component read from the accelerometer
+   /// \param roll - y component read from the accelerometer   
+   void read_accelerometer(float *pitch, float *roll);
    /*************************************************************/ 
 
 

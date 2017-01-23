@@ -5,14 +5,6 @@
 #include <stdint.h>
 #include <linux/i2c-dev.h>
 
-typedef struct IMU_AXIS{
-   uint8_t axis_id; // 0 - X | 1 - Y | 2 - Z
-   float mag;
-   float accel;
-   float gyro;
-
-} IMU_AXIS;
-
 #define GRAVITY_EARTH 9.80665F
 #define GAUSS_TO_MICROTESLA 100.0F
 #define RADTODEG 180.0/M_PI
