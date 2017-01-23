@@ -6,6 +6,9 @@
 
 #include "Ada10Dof/Ada10Dof.h"
 
+ofstream csvfile;
+
+
 /// \brief mutex to protect acess to raw_imu_value
 pthread_mutex_t raw_val_mutex = PTHREAD_MUTEX_INITIALIZER;
 /// \brief mutex to protect acess to linearization table
@@ -376,16 +379,13 @@ void Ada10Dof::set_gyroscope_rateBwLevel(Ada10Dof_GyroRate rate,Ada10Dof_GyroBWL
    i2cSendData(GYRO_ADDRESS,GYRO_REGISTER_CTRL_REG1,1,data);
 }
 
-void Ada10Dof::read_gyroscope(float *pitch, float *roll, float *yaw)
+void Ada10Dof::read_gyroscope(float *rate_x, float *rate_y, float *rate_z)
 {
-   float gyro_x,gyro_y,gyro_z;
    uint8_t values[6] = {0,0,0,0,0,0};
    i2cRequestData(GYRO_ADDRESS, GYRO_REGISTER_OUT_X_L|0x80, 6, values);
-   gyro_x = ((int16_t)(values[0] | (values[1] << 8)))*gyro_sens;
-   gyro_y = ((int16_t)(values[2] | (values[3] << 8)))*gyro_sens;
-   gyro_z = ((int16_t)(values[4] | (values[5] << 8)))*gyro_sens;
-
-   printf("%.2f %.2f %.2f\n",gyro_x,gyro_y,gyro_z);
+   *rate_x = ((int16_t)(values[0] | (values[1] << 8)))*gyro_sens;
+   *rate_y = ((int16_t)(values[2] | (values[3] << 8)))*gyro_sens;
+   *rate_z = ((int16_t)(values[4] | (values[5] << 8)))*gyro_sens;
 }
 /*************************************************************/
 
@@ -413,16 +413,18 @@ int Ada10Dof::correct_imu()
 
 int Ada10Dof::get_heading()
 {
-//   struct timeval t0,t1;
-//   gettimeofday(&t0,0);
-//   t1 = t0;
+   static int counter = 0;
+   if(counter==0){
+      csvfile.open("/home/pi/catkin_ws/src/minho_team_pihw/utils/output2.csv");
+      csvfile << "\"Mag\",\"AccX\",\"AccY\",\"RateX\",\"RateY\",\"RateZ\"" << endl;
+   }
+   float pitch = 0.0, roll = 0.0, rateX = 0.0, rateY = 0.0, rateZ = 0.0;
    float magz = read_magnetometer_z();
-   float pitch = 0.0, roll = 0.0;
    read_accelerometer(&pitch,&roll);
-//   gettimeofday(&t1,0);
-//   uint16_t elapsed = (t1.tv_sec-t0.tv_sec)*1000000+(t1.tv_usec-t0.tv_usec);
-//   printf("%u\n",elapsed);
-   
+   read_gyroscope(&rateX,&rateY,&rateZ);
+   if(counter<200) csvfile << magz << "," << pitch << "," << roll << "," << rateX << "," << rateY << "," << rateZ << endl;
+   else if(csvfile.is_open()) {printf("End csv writing"); csvfile.close(); }
+   counter++;
    pthread_mutex_lock(&raw_val_mutex);
    raw_imu_value = magz;
    pthread_mutex_unlock(&raw_val_mutex);
