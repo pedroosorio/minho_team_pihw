@@ -415,20 +415,24 @@ int Ada10Dof::get_heading()
 {
    static int counter = 0;
    if(counter==0){
-      csvfile.open("/home/pi/catkin_ws/src/minho_team_pihw/utils/output2.csv");
-      csvfile << "\"Mag\",\"AccX\",\"AccY\",\"RateX\",\"RateY\",\"RateZ\"" << endl;
+      csvfile.open("/home/pi/catkin_ws/src/minho_team_pihw/utils/outputZ.csv");
+      csvfile << "\"Mag\",\"RateZ\"" << endl;
    }
    float pitch = 0.0, roll = 0.0, rateX = 0.0, rateY = 0.0, rateZ = 0.0;
    float magz = read_magnetometer_z();
    read_accelerometer(&pitch,&roll);
    read_gyroscope(&rateX,&rateY,&rateZ);
-   if(counter<200) csvfile << magz << "," << pitch << "," << roll << "," << rateX << "," << rateY << "," << rateZ << endl;
-   else if(csvfile.is_open()) {printf("End csv writing"); csvfile.close(); }
-   counter++;
+   
    pthread_mutex_lock(&raw_val_mutex);
    raw_imu_value = magz;
    pthread_mutex_unlock(&raw_val_mutex);
-   return correct_imu();
+   float cor = correct_imu();
+   if(counter<200) csvfile << cor << "," << rateZ << endl;
+   else {
+      if(csvfile.is_open()) {printf("End csv writing"); csvfile.close();}
+   }
+   counter++;
+   return cor;
 }
 /*************************************************************/
 
