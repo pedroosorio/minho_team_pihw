@@ -43,6 +43,7 @@ Ada10Dof::Ada10Dof()
 
    init_magnetometer();
    init_accelerometer();
+   init_gyroscope();
 }
 
 /* Setup Routines */
@@ -268,8 +269,6 @@ float Ada10Dof::read_magnetometer_z()
 /*************************************************************/       
 /* Accelerometer */
 /*************************************************************/ 
-/// \brief reads whoami register and sets everything up
-/// \return - true on success
 bool Ada10Dof::init_accelerometer()
 {
    // enable magnetometer
@@ -329,7 +328,66 @@ void Ada10Dof::read_accelerometer(float *pitch, float *roll)
 
 }
 /*************************************************************/ 
+/* Gyroscope */
+/*************************************************************/
+bool Ada10Dof::init_gyroscope()
+{
+   uint8_t whoami =  i2cRequestByte(GYRO_ADDRESS,GYRO_REGISTER_WHO_AM_I);
+   if(whoami == 0xD4 || whoami == 0xD7){
+      //enable gyroscope
+      uint8_t data[1] = {0x00};
+      i2cSendData(GYRO_ADDRESS,GYRO_REGISTER_CTRL_REG1,1,data);
+      data[1] = 0x0F;
+      i2cSendData(GYRO_ADDRESS,GYRO_REGISTER_CTRL_REG1,1,data);
+      set_gyroscope_range(GYRORANGE_250DPS);
+      set_gyroscope_rateBwLevel(GYRORATE_95,GYROBW_LVL2);         
+      printf("_ADA10DOF: Gyroscope initialized.\n");
+      return true;
+   } else { 
+      gyro_sens = GYROSENS_250DPS*DPSTORADS;
+      printf("_ADA10DOF: Failed to connect to Gyroscope.\n"); 
+      return false;
+   }
+}
 
+void Ada10Dof::set_gyroscope_range(Ada10Dof_GyroRange range)
+{
+   uint8_t data[1] = {range};
+   i2cSendData(GYRO_ADDRESS,GYRO_REGISTER_CTRL_REG4,1,data);   
+   
+   switch(range)
+   {
+      case GYRORANGE_250DPS:
+         gyro_sens = ((float)GYROSENS_250DPS/100000.0)*DPSTORADS;
+         break;
+      case GYRORANGE_500DPS:
+         gyro_sens = ((float)GYROSENS_500DPS/100000.0)*DPSTORADS;
+         break;
+      case GYRORANGE_2000DPS:
+         gyro_sens = ((float)GYROSENS_2000DPS/100000.0)*DPSTORADS;
+         break;
+   }  
+}
+
+void Ada10Dof::set_gyroscope_rateBwLevel(Ada10Dof_GyroRate rate,Ada10Dof_GyroBWLevel bwlevel)
+{
+   uint8_t data[1] = {rate};
+   data[1]=(rate & ~0x30)|(bwlevel & 0x30);
+   i2cSendData(GYRO_ADDRESS,GYRO_REGISTER_CTRL_REG1,1,data);
+}
+
+void Ada10Dof::read_gyroscope(float *pitch, float *roll, float *yaw)
+{
+   float gyro_x,gyro_y,gyro_z;
+   uint8_t values[6] = {0,0,0,0,0,0};
+   i2cRequestData(GYRO_ADDRESS, GYRO_REGISTER_OUT_X_L|0x80, 6, values);
+   gyro_x = ((int16_t)(values[0] | (values[1] << 8)))*gyro_sens;
+   gyro_y = ((int16_t)(values[2] | (values[3] << 8)))*gyro_sens;
+   gyro_z = ((int16_t)(values[4] | (values[5] << 8)))*gyro_sens;
+
+   printf("%.2f %.2f %.2f\n",gyro_x,gyro_y,gyro_z);
+}
+/*************************************************************/
 
 /* Reading Routines */
 /*************************************************************/

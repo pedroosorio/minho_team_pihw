@@ -115,8 +115,24 @@ class Ada10Dof
    /// \param roll - y component read from the accelerometer   
    void read_accelerometer(float *pitch, float *roll);
    /*************************************************************/ 
-
-
+   /* Gyroscope */
+   /*************************************************************/
+   /// \brief reads whoami register and sets everything up
+   /// \return - true on success
+   bool init_gyroscope();  
+   /// \brief sets gyroscope sensing range
+   /// \param range - range to be set 
+   void set_gyroscope_range(Ada10Dof_GyroRange range);
+   /// \brief sets gyroscope data output rate and bandwith
+   /// \param rate - output data rate in hertz 
+   /// \param bwlevel - bandwith (cutoff) level (1,2,3,4)
+   void set_gyroscope_rateBwLevel(Ada10Dof_GyroRate rate,Ada10Dof_GyroBWLevel bwlevel);
+   /// \brief reads gyroscope X and Y and Z components
+   /// \param pitch - x component read from the accelerometer
+   /// \param roll - y component read from the accelerometer   
+   /// \param yaw - z component read from the accelerometer
+   void read_gyroscope(float *pitch, float *roll, float *yaw);
+   /*************************************************************/
 
    private:
    /* I2C Bus communication variables */
@@ -137,6 +153,7 @@ class Ada10Dof
    float mag_gauss_xy;
    float mag_gauss_z;
    float accel_g_lsb;
+   float gyro_sens;
    /*************************************************************/
 
    /* Linearization */
