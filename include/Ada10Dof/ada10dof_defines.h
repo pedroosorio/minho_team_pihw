@@ -208,4 +208,14 @@ typedef enum
 /**********************************************************/
 /**************************************************************************************/
 /**************************************************************************************/
+typedef struct Vec3{
+   float x;
+   float y;
+   float z;
+}Vec3;
 
+typedef struct MTKalmanFilter{
+    Vec3 predictedState, predictedCovariance;
+    Vec3 lastCovariance, covariance;
+    Vec3 Q,R,K;
+}MTKalmanFilter;

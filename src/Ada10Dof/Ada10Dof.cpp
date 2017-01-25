@@ -6,8 +6,6 @@
 
 #include "Ada10Dof/Ada10Dof.h"
 
-ofstream csvfile;
-
 
 /// \brief mutex to protect acess to raw_imu_value
 pthread_mutex_t raw_val_mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -47,6 +45,7 @@ Ada10Dof::Ada10Dof()
    init_magnetometer();
    init_accelerometer();
    init_gyroscope();
+   init_kalman_filter();
 }
 
 /* Setup Routines */
@@ -188,6 +187,18 @@ void Ada10Dof::get_imu_configuration(int *st, std::vector<uint16_t> *imu)
    (*st) = step;
    (*imu) = imu_values;
 }
+
+void Ada10Dof::init_kalman_filter()
+{
+   memset(&kalman,0,sizeof(MTKalmanFilter));
+   // Kalman parameters for Z
+   kalman.Q.z = 0.1; kalman.R.z = 8;
+   kalman.Q.x = 1; kalman.R.x = 1;
+   kalman.Q.y = 1; kalman.R.y = 1;
+   kalman.lastCovariance.x = kalman.lastCovariance.y = kalman.lastCovariance.z = 0;
+   kalman.covariance = kalman.predictedCovariance = kalman.lastCovariance;
+}
+
 /*************************************************************/
 
 /* IMU Specific setup functions */
@@ -389,6 +400,26 @@ void Ada10Dof::read_gyroscope(float *rate_x, float *rate_y, float *rate_z)
 }
 /*************************************************************/
 
+/* Kalman Functions */
+/*************************************************************/
+void Ada10Dof::compute_kalman_z(float rateZ)
+{
+   kalman.predictedState.z = corrected_imu - 0.025*rateZ*RADTODEG;
+   while(kalman.predictedState.z > 360.0) kalman.predictedState.z -= 360.0;
+   while(kalman.predictedState.z < 0.0) kalman.predictedState.z += 360.0;
+   corrected_imu = correct_imu();
+   if(corrected_imu < 90.0 && kalman.predictedState.z > 270.0) kalman.predictedState.z -= 360.0;
+   if(corrected_imu > 270.0 && kalman.predictedState.z < 90.0) kalman.predictedState.z += 360.0;
+   kalman.predictedCovariance.z = kalman.lastCovariance.z + kalman.Q.z;
+   kalman.K.z = kalman.predictedCovariance.z/(kalman.predictedCovariance.z+kalman.R.z);
+   corrected_imu = kalman.predictedState.z + kalman.K.z*(corrected_imu - kalman.predictedState.z);
+   while(corrected_imu > 360.0) corrected_imu -= 360.0;
+   while(corrected_imu < 0.0) corrected_imu += 360.0;
+   kalman.covariance.z = (1-kalman.K.z)*kalman.predictedCovariance.z;  
+}
+/*************************************************************/
+
+
 /* Reading Routines */
 /*************************************************************/
 int Ada10Dof::correct_imu()
@@ -413,26 +444,12 @@ int Ada10Dof::correct_imu()
 
 int Ada10Dof::get_heading()
 {
-   static int counter = 0;
-   if(counter==0){
-      csvfile.open("/home/pi/catkin_ws/src/minho_team_pihw/utils/outputZ.csv");
-      csvfile << "\"Mag\",\"RateZ\"" << endl;
-   }
    float pitch = 0.0, roll = 0.0, rateX = 0.0, rateY = 0.0, rateZ = 0.0;
-   float magz = read_magnetometer_z();
+   raw_imu_value = read_magnetometer_z();
    read_accelerometer(&pitch,&roll);
    read_gyroscope(&rateX,&rateY,&rateZ);
-   
-   pthread_mutex_lock(&raw_val_mutex);
-   raw_imu_value = magz;
-   pthread_mutex_unlock(&raw_val_mutex);
-   float cor = correct_imu();
-   if(counter<200) csvfile << cor << "," << rateZ << endl;
-   else {
-      if(csvfile.is_open()) {printf("End csv writing"); csvfile.close();}
-   }
-   counter++;
-   return cor;
+   compute_kalman_z(rateZ);
+   return corrected_imu;   
 }
 /*************************************************************/
 

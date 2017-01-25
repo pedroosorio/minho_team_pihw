@@ -69,6 +69,15 @@ class Ada10Dof
 
    /// \brief gets current imu linearization configuration
    void get_imu_configuration(int *st, std::vector<uint16_t> *imu);
+   
+   /// \brief function to init Kalman filter weights
+   void init_kalman_filter();
+   /*************************************************************/
+
+   /* Kalman Functions */
+   /*************************************************************/
+   /// \brief computes kalman merging of z axis (mag and gyro)
+   void compute_kalman_z(float rateZ);
    /*************************************************************/
 
    /* Reading Routines */
@@ -144,6 +153,8 @@ class Ada10Dof
    bool init;
    /// \brief file name of the I2C bus
    std::string device_name;
+   /// \brief kalman filter struct to compute kalman filter
+   MTKalmanFilter kalman;
    /*************************************************************/ 
    
    /* Configuration and Parameters */
@@ -168,6 +179,8 @@ class Ada10Dof
    float raw_imu_value;
    /// \brief value representing reference 0º
    float alfa;
+   /// \brief corrected imu value
+   float corrected_imu;
    /*************************************************************/ 
 
 

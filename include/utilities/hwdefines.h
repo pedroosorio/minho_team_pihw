@@ -13,7 +13,7 @@
 #define CAM_OFF_VOLT 0.0
 
 // MAIN
-#define MAIN_CRIT_VOLT 22.0
+#define MAIN_CRIT_VOLT 21.0
 #define MAIN_OFF_VOLT -4.0
 
 /* This header defines KICK pin and kick signal properties */
