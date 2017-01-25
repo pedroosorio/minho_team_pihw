@@ -192,7 +192,7 @@ void Ada10Dof::init_kalman_filter()
 {
    memset(&kalman,0,sizeof(MTKalmanFilter));
    // Kalman parameters for Z
-   kalman.Q.z = 0.1; kalman.R.z = 8;
+   kalman.Q.z = 1; kalman.R.z = 0.5;
    kalman.Q.x = 1; kalman.R.x = 1;
    kalman.Q.y = 1; kalman.R.y = 1;
    kalman.lastCovariance.x = kalman.lastCovariance.y = kalman.lastCovariance.z = 0;
