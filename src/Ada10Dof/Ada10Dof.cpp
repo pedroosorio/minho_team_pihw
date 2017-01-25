@@ -269,14 +269,30 @@ void Ada10Dof::set_magnetometer_rate(Ada10Dof_MagRate rate)
    i2cSendData(MAG_ADDRESS,REGISTER_MAG_CRA_REG_M,1,data);
 }
 
-float Ada10Dof::read_magnetometer_z()
+float Ada10Dof::read_magnetometer_z(bool magtilt)
 {
-   int16_t mag_x,mag_y;
+   int16_t mag_x,mag_y,mag_z;
    uint8_t values[6] = {0,0,0,0,0,0};
    i2cRequestData(MAG_ADDRESS, REGISTER_MAG_OUT_X_H_M, 6, values);
    mag_x = (int16_t)((uint16_t)values[1] | ((uint16_t)values[0] << 8));
+   mag_z = (int16_t)((uint16_t)values[3] | ((uint16_t)values[2] << 8));
    mag_y = (int16_t)((uint16_t)values[5] | ((uint16_t)values[4] << 8));
    
+   if(magtilt){
+      float pitch = 0.0, roll = 0.0;
+      read_accelerometer(&pitch,&roll); 
+      float cR = (float)cos(roll);
+      float sR = (float)sin(roll);
+      float cP = (float)cos(-1*pitch);
+      float sP = (float)sin(-1*pitch);
+
+      /* The tilt compensation algorithm                            */
+      /* Xh = X.cosPitch + Z.sinPitch                               */
+      /* Yh = X.sinRoll.sinPitch + Y.cosRoll - Z.sinRoll.cosPitch   */
+      mag_x = (mag_x)*cP+(mag_z)*sP;
+      mag_y = (mag_y)*sR*sP+(mag_y)*cR-(mag_z)*sR*cP;
+   }
+
    return (float)atan2((float)mag_y/mag_gauss_xy*GAUSS_TO_MICROTESLA
                       ,(float)mag_x/mag_gauss_xy*GAUSS_TO_MICROTESLA)*RADTODEG;
 }
@@ -337,8 +353,8 @@ void Ada10Dof::read_accelerometer(float *pitch, float *roll)
    acc_z = ((int16_t)(values[4] | (values[5] << 8)) >> 4)*accel_g_lsb*GRAVITY_EARTH;
 
    float signOfZ = acc_z >= 0 ? 1.0F : -1.0F;
-   (*roll) = (float)atan2(acc_y, sqrt(acc_x*acc_x+acc_z*acc_z))*RADTODEG;
-   (*pitch) = (float)atan2(acc_x, signOfZ*sqrt(acc_y*acc_y+acc_z*acc_z))*RADTODEG;
+   (*roll) = (float)atan2(acc_y, sqrt(acc_x*acc_x+acc_z*acc_z));
+   (*pitch) = (float)atan2(acc_x, signOfZ*sqrt(acc_y*acc_y+acc_z*acc_z));
 
 }
 /*************************************************************/ 
@@ -390,13 +406,11 @@ void Ada10Dof::set_gyroscope_rateBwLevel(Ada10Dof_GyroRate rate,Ada10Dof_GyroBWL
    i2cSendData(GYRO_ADDRESS,GYRO_REGISTER_CTRL_REG1,1,data);
 }
 
-void Ada10Dof::read_gyroscope(float *rate_x, float *rate_y, float *rate_z)
+void Ada10Dof::read_gyroscope_z(float *rate_z)
 {
    uint8_t values[6] = {0,0,0,0,0,0};
-   i2cRequestData(GYRO_ADDRESS, GYRO_REGISTER_OUT_X_L|0x80, 6, values);
-   *rate_x = ((int16_t)(values[0] | (values[1] << 8)))*gyro_sens;
-   *rate_y = ((int16_t)(values[2] | (values[3] << 8)))*gyro_sens;
-   *rate_z = ((int16_t)(values[4] | (values[5] << 8)))*gyro_sens;
+   i2cRequestData(GYRO_ADDRESS, GYRO_REGISTER_OUT_Z_L|0x80, 2, values);
+   *rate_z = ((int16_t)(values[0] | (values[1] << 8)))*gyro_sens;
 }
 /*************************************************************/
 
@@ -444,10 +458,9 @@ int Ada10Dof::correct_imu()
 
 int Ada10Dof::get_heading()
 {
-   float pitch = 0.0, roll = 0.0, rateX = 0.0, rateY = 0.0, rateZ = 0.0;
-   raw_imu_value = read_magnetometer_z();
-   read_accelerometer(&pitch,&roll);
-   read_gyroscope(&rateX,&rateY,&rateZ);
+   float rateZ = 0.0;
+   raw_imu_value = read_magnetometer_z(true);
+   read_gyroscope_z(&rateZ);
    compute_kalman_z(rateZ);
    return corrected_imu;   
 }

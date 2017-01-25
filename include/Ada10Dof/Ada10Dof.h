@@ -105,8 +105,9 @@ class Ada10Dof
    /// \param rate - update rate in Hz
    void set_magnetometer_rate(Ada10Dof_MagRate rate);
    /// \brief reads magnetometer Z component
+   /// \brief magtilt - if true applys magnetometer tilt compensation
    /// \return - value read in Z component of magnetometer
-   float read_magnetometer_z();
+   float read_magnetometer_z(bool magtilt);
    /*************************************************************/       
    /* Accelerometer */
    /*************************************************************/ 
@@ -136,11 +137,9 @@ class Ada10Dof
    /// \param rate - output data rate in hertz 
    /// \param bwlevel - bandwith (cutoff) level (1,2,3,4)
    void set_gyroscope_rateBwLevel(Ada10Dof_GyroRate rate,Ada10Dof_GyroBWLevel bwlevel);
-   /// \brief reads gyroscope X and Y and Z components
-   /// \param pitch - x component read from the accelerometer
-   /// \param roll - y component read from the accelerometer   
-   /// \param yaw - z component read from the accelerometer
-   void read_gyroscope(float *pitch, float *roll, float *yaw);
+   /// \brief reads gyroscope Z components
+   /// \param ratez - z component read from the gyroscope
+   void read_gyroscope_z(float *rate_z);
    /*************************************************************/
 
    private:
