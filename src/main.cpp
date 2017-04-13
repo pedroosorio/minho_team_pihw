@@ -89,7 +89,7 @@ Omni3MD omni(0x18,&i2c_mutex);
 Ada10Dof imu;
 /// \brief MCP3008 object to communicate through SPI bus
 /// with 8-channel 10bit ADC
-MCP3k8 adc(SPI_DEV_0,1000000,SPI_MODE_0,8,5.0);
+//MCP3k8 adc(SPI_DEV_0,1000000,SPI_MODE_0,8,5.0);
 /* ****************** */
 
 /* *********************************************** */
@@ -246,6 +246,12 @@ void setup_kick()
 {
    pinMode(KICK_PIN, OUTPUT);
    digitalWrite(KICK_PIN, LOW);
+   pinMode(GRABBER_GPIO, OUTPUT);
+   digitalWrite(KICK_PIN, LOW);
+   pinMode(PC_GPIO, INPUT);
+   pinMode(CAM_GPIO, INPUT);
+   pinMode(BALLSENS_GPIO, INPUT);
+   pinMode(FREE_WHEEL_GPIO, INPUT);
 }
 
 void *readEncoders(void *per_info)
@@ -301,7 +307,7 @@ void *readBatteries(void *per_info)
    while(ros::ok()){
       pthread_mutex_lock(&hw_mutex);     
       //read channel 1 (pc_bat)
-      hw.battery_pc = adc.readChannel(0,PC_REF_VOLT);
+      hw.battery_pc = digitalRead(PC_GPIO)*PC_REF_VOLT;
       hw.battery_pc += PC_OFF_VOLT;
       if(hw.battery_pc>2.5 && hw.battery_pc<PC_CRIT_VOLT) {
          if(need_alrm_pc){
@@ -313,7 +319,7 @@ void *readBatteries(void *per_info)
 
       pthread_mutex_lock(&hw_mutex);
       //read channel 1 (pc_bat)
-      hw.battery_camera = adc.readChannel(1,CAM_REF_VOLT);
+      hw.battery_camera = digitalRead(CAM_GPIO)*CAM_REF_VOLT;
       hw.battery_camera += CAM_OFF_VOLT;
       if(hw.battery_camera>2.5 && hw.battery_camera<CAM_CRIT_VOLT){ 
          if(need_alrm_cam){ 
@@ -325,7 +331,7 @@ void *readBatteries(void *per_info)
 
       pthread_mutex_lock(&hw_mutex);
       //read channel 3 (free_wheel)
-      int freewheel = adc.readChannel(2,5.0);
+      int freewheel = digitalRead(FREE_WHEEL_GPIO)*5.0;
       bool old_freewheel = hw.free_wheel_activated;
       if(freewheel>2.5) hw.free_wheel_activated = true;
       else hw.free_wheel_activated = false;
@@ -347,7 +353,8 @@ void *readBatteries(void *per_info)
       pthread_mutex_unlock(&hw_mutex);
 
       //Grabber readings will go here
-
+      hw.ball_sensor = digitalRead(BALLSENS_GPIO);
+      
       wait_period(info);
    }
 }
@@ -380,6 +387,8 @@ void controlInfoCallback(const controlInfo::ConstPtr &msg)
       pthread_mutex_unlock(&i2c_mutex);
 
       //Grabber actuaction will go here 
+      if(msg->dribbler_on) digitalWrite(GRABBER_GPIO,HIGH);
+      else digitalWrite(GRABBER_GPIO,LOW);
    }     
 }
 
