@@ -85,3 +85,13 @@ add_executable(pihw ${SRC})
 target_link_libraries(pihw ${catkin_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT} mcp3k8 Omni3MD Alarm thPool Ada10Dof ${WIRINGPI_LIBRARIES})
 add_dependencies(pihw Omni3MD mcp3k8 thPool Alarm Ada10Dof minho_team_ros_gencpp)
 ##
+
+
+############# GOALKEEPER NODE #############
+###########################################
+add_executable(rosDaemon ${PDIR}/rosDaemon.cpp)
+target_link_libraries(rosDaemon ${catkin_LIBRARIES})
+set_target_properties(rosDaemon PROPERTIES COMPILE_FLAGS "-fPIC")
+set_target_properties(rosDaemon PROPERTIES RUNTIME_OUTPUT_DIRECTORY $ENV{HOME}/bin)
+target_compile_features(rosDaemon PRIVATE cxx_range_for)
+########################################
