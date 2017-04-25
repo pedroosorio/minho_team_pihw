@@ -120,30 +120,22 @@ int main(int argc, char **argv) {
   clientlen = sizeof(clientaddr);
   while (1) {
 
-    /* 
-     * accept: wait for a connection request 
-     */
     childfd = accept(parentfd, (struct sockaddr *) &clientaddr, &clientlen);
     if (childfd < 0) 
       system("echo \"Error on accept\" >> sys.log");
-    
-    /* 
-     * gethostbyaddr: determine who sent the message 
-     */
+   
     hostp = gethostbyaddr((const char *)&clientaddr.sin_addr.s_addr, 
 			  sizeof(clientaddr.sin_addr.s_addr), AF_INET);
     if (hostp == NULL)
       system("echo \"Error on gethostbyaddr\" >> sys.log");
+      
     hostaddrp = inet_ntoa(clientaddr.sin_addr);
+    
     if (hostaddrp == NULL)
       system("echo \"Error on inet_ntoa\" >> sys.log");
-    printf("server established connection with %s (%s)\n", 
-	   hostp->h_name, hostaddrp);
-	   system("echo \"PICMD: Client connected.\" >> sys.log");
+      
+   system("echo \"PICMD: Client connected.\" >> sys.log");
     
-    /* 
-     * read: read input string from the client
-     */
     bzero(buf, BUFSIZE);
     n = read(childfd, buf, BUFSIZE);
     if (n < 0) 
@@ -173,4 +165,5 @@ int main(int argc, char **argv) {
 
     close(childfd);
   }
+  
 }
