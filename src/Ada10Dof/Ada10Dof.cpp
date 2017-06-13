@@ -459,9 +459,12 @@ int Ada10Dof::correct_imu()
 int Ada10Dof::get_heading()
 {
    float rateZ = 0.0;
-   raw_imu_value = read_magnetometer_z(true);
-   read_gyroscope_z(&rateZ);
-   compute_kalman_z(rateZ);
+   bool merge = false;
+   raw_imu_value = read_magnetometer_z(merge);
+   if(merge){
+    read_gyroscope_z(&rateZ);
+    compute_kalman_z(rateZ);
+   } else corrected_imu = correct_imu();
    return corrected_imu;   
 }
 /*************************************************************/
